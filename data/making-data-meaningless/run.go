@@ -15,12 +15,13 @@ import (
 )
 
 type user struct {
-	id   string
-	name string
+	id    string
+	name  string
+	email string
 }
 
 func (u user) toStringArray() []string {
-	return []string{u.id, u.name}
+	return []string{u.id, u.name, u.email}
 }
 
 func getTitleReadHead() []string {
@@ -28,7 +29,7 @@ func getTitleReadHead() []string {
 }
 
 func getUserHead() []string {
-	return []string{"USER_ID", "NAME"}
+	return []string{"USER_ID", "NAME", "EMAIL"}
 }
 
 var dvcIDMapGlobal map[string]string = make(map[string]string)
@@ -149,9 +150,12 @@ func processPseudoUserData(userIDs []string) {
 	users := make([][]string, 0, len(userIDs))
 
 	for i, userID := range userIDs {
+		name := "username" + strconv.Itoa(i+1)
+		email := name + "@aws-dna.org"
 		users = append(users, user{
-			id:   userID,
-			name: "username" + strconv.Itoa(i+1),
+			id:    userID,
+			name:  name,
+			email: email,
 		}.toStringArray())
 	}
 
