@@ -5,6 +5,7 @@ import time
 
 from botocore.exceptions import ClientError
 
+# global variables
 region='ap-northeast-2'
 
 personalize = boto3.client('personalize', region_name=region)
@@ -12,10 +13,44 @@ s3 = boto3.client('s3', region_name=region)
 
 logging.basicConfig(level=logging.INFO)
 
-bucket_name = "team3-recommendation-system-data-5"
+bucket_name = "team3-recommendation-system-data-7"
 data_directory = "data"
 
-# S3 Bucket creation
+# utils
+def get_file_paths_recursively(dirname, ext):
+  files = []
+  for r, _, f in os.walk(dirname):
+      for file in f:
+          if '.' + ext in file:
+              files.append(os.path.join(r, file))
+  return files
+
+def create_getting_next_dots(): 
+  number_of_dots = 1
+  def get_next_dots():
+      nonlocal number_of_dots
+      dots = ""
+      for _ in range(0, number_of_dots):
+          dots += "."
+      number_of_dots %= 3
+      number_of_dots += 1
+
+      return dots
+  return get_next_dots
+
+get_next_dots = create_getting_next_dots()
+
+def wait_until_status(lambda_to_get_status, message_prefix, expected_status):
+    while True:
+        status = lambda_to_get_status()
+        if status != expected_status:
+            logging.info(message_prefix + " current status: " + status + get_next_dots())
+            time.sleep(1)
+        else:
+            logging.info("expected status achieved: " + status)
+            break
+
+# AWS
 def create_bucket():
     logging.info('Create bucket. bucket_name: {}, region: {}'.format(bucket_name, region))
 
@@ -52,13 +87,6 @@ def add_bucket_policy():
       ConfirmRemoveSelfBucketAccess=True,
       Policy=policy)
 
-def get_file_paths_recursively(dirname, ext):
-  files = []
-  for r, _, f in os.walk(dirname):
-      for file in f:
-          if '.' + ext in file:
-              files.append(os.path.join(r, file))
-  return files
 
 def upload_data():
     csv_file_paths = get_file_paths_recursively(data_directory, "csv")
@@ -67,6 +95,7 @@ def upload_data():
     s3 = boto3.resource('s3')
     for p in csv_file_paths:
         s3.meta.client.upload_file(p, bucket_name, p)
+
 
 def register_schema():
     json_file_paths = get_file_paths_recursively(data_directory, "json")
@@ -78,39 +107,13 @@ def register_schema():
             schema_name = p.split("/")[1]
             createSchemaResponse = personalize.create_schema(
                 name = schema_name,
-                schema = f.read()
-            )
+                schema = f.read())
 
         schema_arn = createSchemaResponse['schemaArn']
         logging.info('Schema Name: {}, ARN: {}'.format(schema_name, schema_arn))
         arn_dictionary[schema_name] = schema_arn
     
     return arn_dictionary
-
-def create_getting_next_dots(): 
-  number_of_dots = 1
-  def get_next_dots():
-      nonlocal number_of_dots
-      dots = ""
-      for _ in range(0, number_of_dots):
-          dots += "."
-      number_of_dots %= 3
-      number_of_dots += 1
-
-      return dots
-  return get_next_dots
-
-get_next_dots = create_getting_next_dots()
-
-def wait_until_status(lambda_to_get_status, message_prefix, expected_status):
-    while True:
-        status = lambda_to_get_status()
-        if status != expected_status:
-            logging.info(message_prefix + " current status: " + status + get_next_dots())
-            time.sleep(1)
-        else:
-            logging.info("expected status achieved: " + status)
-            break
 
 def create_dataset_group():
     response = personalize.create_dataset_group(name = 'manhwakyung-title-recommendation')
@@ -127,6 +130,11 @@ def create_dataset_group():
 
 def delete_schema(arn):
     personalize.delete_schema(schemaArn=arn)
+
+def delete_schemas(arns):
+    logging.info("Delete schema: " + ", ".join(arns))
+    for arn in arns:
+      delete_schema(arn)
 
 def delete_dataset_group(dsg_arn):
     personalize.delete_dataset_group(datasetGroupArn=dsg_arn)
@@ -151,19 +159,20 @@ def destroy():
     s3_client.delete_bucket(Bucket=bucket_name)
 
 
-
 ##### main
-# create_bucket()
-# add_bucket_policy()
+create_bucket()
+add_bucket_policy()
 # upload_data()
 
-# schema_arns = register_schema() # schema_arns = {'title': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/title', 'title-read': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/title-read', 'user': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/user'}
+schema_arns = register_schema()
+# schema_arns = {'title': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/title', 'title-read': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/title-read', 'user': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/user'}
 # logging.info(schema_arns)
 
 dsg_arn = create_dataset_group()
 # dsg_arn = 'arn:aws:personalize:ap-northeast-2:772278550552:dataset-group/manhwakyung-title-recommendation'
 
 delete_dataset_group(dsg_arn) 
-# TODO: remove personalize data schema?
+delete_schemas(schema_arns.values())
+
 # TODO: delete all data in s3?
-# destroy()
+destroy()
