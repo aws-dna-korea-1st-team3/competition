@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "Interactions",
+  "name": "Users",
   "namespace": "com.amazonaws.personalize.schema",
   "fields": [
       {
@@ -8,20 +8,12 @@
           "type": "string"
       },
       {
-          "name": "ITEM_ID",
-          "type": "string"
-      },
-      {
-          "name": "TIMESTAMP",
-          "type": "long"
-      },
-      {
-          "name": "TITLE",
+          "name": "NAME",
           "type": "string",
           "categorical": true
       },
       {
-          "name": "EVENT_TYPE",
+          "name": "EMAIL",
           "type": "string"
       }
   ],
