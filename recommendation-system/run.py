@@ -9,6 +9,8 @@ from botocore.exceptions import ClientError
 region='ap-northeast-2'
 
 personalize = boto3.client('personalize', region_name=region)
+personalize_runtime = boto3.client('personalize-runtime', region_name=region)
+
 s3 = boto3.client('s3', region_name=region)
 iam_client = boto3.client('iam', region_name=region)
 iam_resource = boto3.resource('iam', region_name=region)
@@ -22,6 +24,10 @@ TITLE = "title"
 USER = "user"
 TITLE_READ = "title-read"
 ROLE_NAME = "team3-recommendation-system"
+SOLUTION_NAME = "manhwakyung-title-recommendation"
+SOLUTION = "solution"
+SOLUTION_VERSION = "solution-version"
+CAMPAIGN_NAME = "manhwakyung-title-recommendation-campaign"
 
 # utils
 def get_file_paths_recursively(dirname, ext):
@@ -255,36 +261,96 @@ def import_dataset(dataset_arn_dict):
         messagePrefix = "Importing title-read dataset group...",
         expectedStatus = "ACTIVE")
 
+def create_solution(dsg_arn):
+    solution_response = personalize.create_solution(
+        name = SOLUTION_NAME,
+        datasetGroupArn = dsg_arn,
+        recipeArn = 'arn:aws:personalize:::recipe/aws-sims')
+
+    solution_arn = solution_response['solutionArn']
+
+    wait_until_status(
+        lambdaToGetStatus = lambda _="" : personalize.describe_solution(solutionArn = solution_arn)['solution']["status"],
+        messagePrefix = "Creating a solution...",
+        expectedStatus = "ACTIVE")
+    
+    solution_version_response = personalize.create_solution_version(
+        solutionArn=solution_arn)
+    solution_version_arn = solution_version_response['solutionVersionArn']
+
+    wait_until_status(
+        lambdaToGetStatus=lambda _="": personalize.describe_solution_version(
+            solutionVersionArn=solution_version_arn)['solutionVersion']['status'],
+        messagePrefix="Creating a solution version...",
+        expectedStatus="ACTIVE")
+
+    arns = {}
+    arns[SOLUTION] = solution_arn
+    arns[SOLUTION_VERSION] = solution_version_arn
+    
+    return arns
+
+def create_campaign(solutionVersionArn):
+    response = personalize.create_campaign(
+        name = CAMPAIGN_NAME,
+        solutionVersionArn=solutionVersionArn,
+        minProvisionedTPS = 1)
+
+    arn = response['campaignArn']
+
+    wait_until_status(
+        lambdaToGetStatus=lambda _="": personalize.describe_campaign(campaignArn = arn)['campaign']['status'],
+        messagePrefix="Creating a campaign...",
+        expectedStatus="ACTIVE")
+    
+    return arn
+
+def delete_campaign(campaignArn):
+    try:
+      personalize.delete_campaign(campaignArn=campaignArn)
+      wait_until_status(
+          lambdaToGetStatus=lambda _="": personalize.describe_campaign(campaignArn=campaignArn)['campaign']['status'],
+          messagePrefix="Deleting a campaign...",
+          expectedStatus="DELETED")
+
+    except:
+        logging.info("The campaign has been deleted.")
+
 
 def delete_role(policyArn):
     logging.info("Delete role. Role name: " + ROLE_NAME)
     iam_client.detach_role_policy(
-      RoleName=ROLE_NAME,
-      PolicyArn=policyArn
+        RoleName=ROLE_NAME,
+        PolicyArn=policyArn
     )
 
     iam_client.delete_role(RoleName=ROLE_NAME)
     iam_client.delete_policy(PolicyArn=policyArn)
 
+
 def delete_schema(arn):
     personalize.delete_schema(schemaArn=arn)
+
 
 def delete_schemas(arns):
     logging.info("Delete schema: " + ", ".join(arns))
     for arn in arns:
         delete_schema(arn)
 
+
 def delete_dataset_group(dsg_arn):
     personalize.delete_dataset_group(datasetGroupArn=dsg_arn)
 
     try:
         wait_until_status(
-                lambda _="" : personalize.describe_dataset_group(datasetGroupArn=dsg_arn)["datasetGroup"]["status"],
-                "Deleting dataset group...",
-                "Exception")
+            lambda _="": personalize.describe_dataset_group(datasetGroupArn=dsg_arn)[
+                "datasetGroup"]["status"],
+            "Deleting dataset group...",
+            "Exception")
 
     except:
         logging.info("Dataset group has been deleted.")
+
 
 def delete_dataset(arns):
     logging.info("Delete dataset: " + ", ".join(arns))
@@ -304,7 +370,6 @@ def delete_bucket():
 
     s3_client = boto3.client('s3')
     s3_client.delete_bucket(Bucket=BUCKET_NAME)
-
 
 ##### main
 create_bucket()
@@ -327,12 +392,24 @@ dataset_arn_dict = create_dataset(dsg_arn, schema_arn_dict)
 
 import_dataset(dataset_arn_dict)
 
+solution_arn_dict = create_solution(dsg_arn)
+campaign_arn = create_campaign(solution_arn_dict[SOLUTION_VERSION])
+
+response = personalize_runtime.get_recommendations(
+  campaignArn=campaign_arn,
+  itemId='1'
+)
+logging.info(response)
+
 exit(0)
 
 # TODO: add separated script to delete resources.
 
+delete_campaign(campaign_arn)
+personalize.delete_solution(solutionArn=solution_arn_dict[SOLUTION])
+
 delete_dataset(dataset_arn_dict.values())
-delete_dataset_group(dsg_arn) 
+delete_dataset_group(dsg_arn)
 delete_schemas(schema_arn_dict.values())
 
 #policy_arn='arn:aws:iam::772278550552:policy/Team3RecommendationSystemPersonalizeS3BucketAccessPolicy'
