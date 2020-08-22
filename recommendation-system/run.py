@@ -28,6 +28,8 @@ SOLUTION_NAME = "manhwakyung-title-recommendation"
 SOLUTION = "solution"
 SOLUTION_VERSION = "solution-version"
 CAMPAIGN_NAME = "manhwakyung-title-recommendation-campaign"
+ROLE = "Role"
+POLICY = "Policy"
 
 # utils
 def get_file_paths_recursively(dirname, ext):
@@ -84,10 +86,7 @@ def add_bucket_policy():
         "Principal": {{
             "Service": "personalize.amazonaws.com"
         }},
-        "Action": [
-            "s3:GetObject",
-            "s3:ListBucket"
-        ],
+        "Action": "s3:*",
         "Resource": [
             "arn:aws:s3:::{BUCKET_NAME}",
             "arn:aws:s3:::{BUCKET_NAME}/*"
@@ -108,6 +107,9 @@ def upload_data():
     s3 = boto3.resource('s3')
     for p in csv_file_paths:
         s3.meta.client.upload_file(p, BUCKET_NAME, p)
+    
+    batch_inpu_path = "data/title/batch-input.txt"
+    s3.meta.client.upload_file(batch_inpu_path, BUCKET_NAME, batch_inpu_path)
 
 
 def register_schema():
@@ -178,7 +180,7 @@ def create_dataset(dataset_group_arn, schema_arn_dict):
 def create_role():
     logging.info("Creating a role for Personalize. Role name: " + ROLE_NAME)
 
-    iam_client.create_role(
+    role_arn = iam_client.create_role(
         RoleName = ROLE_NAME,
         AssumeRolePolicyDocument = '''{
   "Version": "2012-10-17",
@@ -191,7 +193,7 @@ def create_role():
       "Action": "sts:AssumeRole"
     }
   ]
-}''')
+}''')[ROLE]["Arn"]
 
     policy_name = 'Team3RecommendationSystemPersonalizeS3BucketAccessPolicy'
     new_policy = iam_client.create_policy(
@@ -203,10 +205,7 @@ def create_role():
         {{
             "Sid": "{policy_name}",
             "Effect": "Allow",
-            "Action": [
-                "s3:GetObject",
-                "s3:ListBucket"
-            ],
+            "Action": "s3:*",
             "Resource": [
                 "arn:aws:s3:::{BUCKET_NAME}",
                 "arn:aws:s3:::{BUCKET_NAME}/*"
@@ -219,7 +218,11 @@ def create_role():
     policy = iam_resource.Policy(new_policy_arn)
     policy.attach_role(RoleName=ROLE_NAME)
 
-    return new_policy_arn
+    arns = {}
+    arns[ROLE] = role_arn
+    arns[POLICY] = new_policy_arn
+
+    return arns 
 
 def import_dataset(dataset_arn_dict):
     role_arn = iam_resource.Role(ROLE_NAME).arn
@@ -305,6 +308,28 @@ def create_campaign(solutionVersionArn):
     
     return arn
 
+def create_batch_inference_job(solutionVersionArn, roleArn):
+    batchInferenceJobArn = personalize.create_batch_inference_job(
+      jobName="manhwakyung-title-recommendation-batch",
+      solutionVersionArn=solutionVersionArn,
+      roleArn=roleArn,
+      jobInput={
+        's3DataSource': {
+          'path': f's3://{BUCKET_NAME}/data/title/batch-input.txt'
+        }
+      },
+      jobOutput={
+        's3DataDestination': {
+          'path': f's3://{BUCKET_NAME}/results/by-title-id/'
+        }
+      }
+    )['batchInferenceJobArn']
+
+    wait_until_status(
+        lambdaToGetStatus=lambda _="": personalize.describe_batch_inference_job(batchInferenceJobArn=batchInferenceJobArn)['batchInferenceJob']['status'],
+        messagePrefix="Running batch inference job...",
+        expectedStatus="ACTIVE")
+
 def delete_campaign(campaignArn):
     try:
       personalize.delete_campaign(campaignArn=campaignArn)
@@ -371,12 +396,13 @@ def delete_bucket():
     s3_client = boto3.client('s3')
     s3_client.delete_bucket(Bucket=BUCKET_NAME)
 
+
 ##### main
 create_bucket()
 add_bucket_policy()
 upload_data()
 
-policy_arn = create_role()
+role_and_policy_arn_dict = create_role()
 
 schema_arn_dict = register_schema()
 # schema_arn_dict = {'title': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/title', 'title-read': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/title-read', 'user': 'arn:aws:personalize:ap-northeast-2:772278550552:schema/user'}
@@ -401,6 +427,11 @@ response = personalize_runtime.get_recommendations(
 )
 logging.info(response)
 
+create_batch_inference_job(
+  solutionVersionArn=solution_arn_dict[SOLUTION_VERSION],
+  roleArn=role_and_policy_arn_dict[ROLE])
+
+
 exit(0)
 
 # TODO: add separated script to delete resources.
@@ -413,7 +444,7 @@ delete_dataset_group(dsg_arn)
 delete_schemas(schema_arn_dict.values())
 
 #policy_arn='arn:aws:iam::772278550552:policy/Team3RecommendationSystemPersonalizeS3BucketAccessPolicy'
-delete_role(policy_arn)
+delete_role(role_and_policy_arn_dict[POLICY])
 
 # TODO: delete all data in s3?
 delete_bucket()
