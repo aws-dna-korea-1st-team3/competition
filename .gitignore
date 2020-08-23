@@ -2,3 +2,9 @@ input
 output
 .DS_Store
 run.sh
+
+.persistent_values
+__pycache__
+
+setup.sh
+destroy.sh
