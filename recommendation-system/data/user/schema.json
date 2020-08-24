@@ -1,0 +1,21 @@
+{
+  "type": "record",
+  "name": "Users",
+  "namespace": "com.amazonaws.personalize.schema",
+  "fields": [
+      {
+          "name": "USER_ID",
+          "type": "string"
+      },
+      {
+          "name": "NAME",
+          "type": "string",
+          "categorical": true
+      },
+      {
+          "name": "EMAIL",
+          "type": "string"
+      }
+  ],
+  "version": "1.0"
+}
