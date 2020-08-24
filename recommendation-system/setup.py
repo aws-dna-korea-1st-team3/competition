@@ -281,26 +281,37 @@ def create_batch_inference_job(solutionVersionArn, roleArn):
 
 
 if __name__ == "__main__":
-    create_bucket()
-    add_bucket_policy()
-    upload_data()
+    create_bucket() # 버킷 생성
+    add_bucket_policy() # 버킷 정책 설정
+    upload_data() # data 디렉토리의 파일을 S3에 업로드
 
-    create_role()
+    create_role() # Personalize를 위한 IAM Role 및 Policy 생성
 
-    register_schema()
-    create_dataset_group()
+    register_schema() # Personalize에 스키마 등록
+    create_dataset_group() # 훈련에 사용할 데이터셋 그룹 생성
 
+    # 데이터셋 그룹에 데이터셋 생성
     create_dataset(
       datasetGroupArn=PersistentValues[DSG],
       titleSchemaArn=PersistentValues[TITLE],
       userSchemaArn=PersistentValues[USER],
       titleReadSchemaArn=PersistentValues[TITLE_READ])
 
+    # 데이터셋에 해당하는 데이터를 S3에서 불러오기. 30~40분 소요
     import_dataset(
       titleDatasetArn=PersistentValues[TITLE_DATASET],
       userDatasetArn=PersistentValues[USER_DATASET],
       titleReadDatasetArn=PersistentValues[TITLE_READ_DATASET])
 
+    ### 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
+
+    # Persoanlize Solution및 Solution Version 생성
     create_solution(PersistentValues[DSG])
+
+    # Persoanlize Campaign 생성
     create_campaign(PersistentValues[SOLUTION_VERSION])
+
+    # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
+    # S3 버킷의 data/title/batch-input.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
+    # batch의 output은 S3 버킷의 results/by-title-id/ 이하에 저장됨.
     create_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
