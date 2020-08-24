@@ -1,10 +1,17 @@
-# competition
+# Recommendation System
 
-## Recommendation System
-
-### Setup
+## Setup
 
 `~/.aws/config`에 default로 지정되어있는 access_key와 secret_access_key를 사용합니다. 참고: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html
+
+constant.py의 BUCKET_NAME의 마지막 숫자를 임의의 숫자로 바꿔주세요.
+
+```py3
+# 예)
+BUCKET_NAME = "team3-recommendation-system-personalize-data-348521"
+```
+
+이후에 boto3를 설치하고 setup.py를 실행합니다.
 
 ```sh
 pip install boto3
@@ -53,7 +60,7 @@ if __name__ == "__main__":
 
     # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
     # S3 버킷의 data/title/batch-input.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
-    # batch의 output은 S3 버킷의 results/by-title-id/ 이하에 저장됨.
+    # batch의 output은 S3 버킷의 results/by-title-id/batch-input.txt.out 에 저장됨.
     create_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
 ```
 
