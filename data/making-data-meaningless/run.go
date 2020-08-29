@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -51,7 +52,10 @@ func processTitle() map[string]string {
 	// "ITEM_ID","CREATION_TIMESTAMP","TITLE"
 	// "1","2019-08-16 04:48:10.032","개구리공주"
 
-	rows := readCsvFile("input/title/title.csv")
+	rows := preprocessTitleAndTagData()
+	// writeCsv(rows, "temp.csv")
+	// os.Exit(0)
+
 	head := rows[0]
 	data := rows[1:]
 
@@ -88,6 +92,81 @@ func processTitle() map[string]string {
 	writeCsv(append([][]string{head}, modifiedData...), "output/title/title.csv")
 
 	return idMap
+}
+
+// Return format
+// ITEM_ID,CREATION_TIMESTAMP,TITLE,TAG
+// 1,2019-08-16 04:48:10.032,개구리공주,1|4|11
+// 2,2019-08-16 04:50:12.047,하루의 끝을 당신과,4|11
+// 3,2019-08-16 04:52:31.480,환상여행,1|7
+func preprocessTitleAndTagData() [][]string {
+	// Data format: title.csv
+	// "ITEM_ID","CREATION_TIMESTAMP","TITLE"
+	// "1","2019-08-16 04:48:10.032","개구리공주"
+
+	// Data format: tag.csv
+	// id,name,type,visibility,title_count,recommended,recommendation_order
+	// 1,판타지,GENRE,PUBLIC,22,1,6
+	// 2,유머,GENRE,PUBLIC,12,1,2
+
+	// Data format: title_tag.csv
+	// title_id,tag_id
+	// 1,1
+	// 3,1
+
+	titleRows := readCsvFile("input/title/title.csv")
+	titleHead := titleRows[0]
+	titleData := titleRows[1:]
+
+	tagRows := readCsvFile("input/tag/tag.csv")
+	tagData := tagRows[1:]
+
+	titleTagRows := readCsvFile("input/tag/title_tag.csv")
+	titleTagData := titleTagRows[1:]
+
+	visibleAndGenreTitleTagIDMap := make(map[string]bool)
+	for _, tag := range tagData {
+		if tag[2] == "GENRE" && tag[3] == "PUBLIC" {
+			visibleAndGenreTitleTagIDMap[tag[0]] = true
+		}
+	}
+
+	tagIdsMappedByTitleID := make(map[string][]string)
+	for _, titleTag := range titleTagData {
+		if _, ok := tagIdsMappedByTitleID[titleTag[0]]; !ok {
+			tagIdsMappedByTitleID[titleTag[0]] = []string{}
+		}
+
+		if visibleAndGenreTitleTagIDMap[titleTag[1]] {
+			tagIdsMappedByTitleID[titleTag[0]] = append(tagIdsMappedByTitleID[titleTag[0]], titleTag[1])
+		}
+	}
+
+	for i, titleRow := range titleData {
+		tagIds, ok := tagIdsMappedByTitleID[titleRow[0]]
+		if !ok || len(tagIds) == 0 {
+			continue
+		}
+
+		titleData[i] = append(titleRow, strings.Join(tagIds, "|"))
+	}
+
+	titleHead = append(titleHead, "TAG")
+
+	// shuffle title names
+	titleNames := []string{}
+	for _, titleRow := range titleData {
+		titleNames = append(titleNames, titleRow[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(titleNames), func(i, j int) { titleNames[i], titleNames[j] = titleNames[j], titleNames[i] })
+
+	for i := range titleData {
+		titleData[i][2] = titleNames[i]
+	}
+
+	return append([][]string{titleHead}, titleData...)
 }
 
 func processTitleRead(idMap map[string]string) []string {
