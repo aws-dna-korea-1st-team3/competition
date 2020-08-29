@@ -13,7 +13,11 @@
       },
       {
           "name": "TITLE",
-          "type": "string",
+          "type": "string"
+      },
+      {
+          "name": "TAG",
+          "type": "long",
           "categorical": true
       }
   ],

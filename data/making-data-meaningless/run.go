@@ -229,20 +229,19 @@ func processTitleRead(idMap map[string]string) []string {
 
 func ageGenerator() int {
 	r := rand.Float64()
-	lastDigit := rand.Intn(10)
 
 	if r < 0.4 {
-		return 10 + lastDigit
+		return 10
 	} else if r < 0.7 {
-		return 20 + lastDigit
+		return 20
 	} else if r < 0.9 {
-		return 30 + lastDigit
+		return 30
 	} else if r < 0.95 {
-		return 40 + lastDigit
+		return 40
 	} else if r < 0.98 {
-		return 50 + lastDigit
+		return 50
 	} else {
-		return 60 + lastDigit
+		return 60
 	}
 }
 
