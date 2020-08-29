@@ -9,12 +9,21 @@
       },
       {
           "name": "NAME",
-          "type": "string",
-          "categorical": true
+          "type": "string"
       },
       {
           "name": "EMAIL",
           "type": "string"
+      },
+      {
+          "name": "GENDER",
+          "type": "string",
+          "categorical": true
+      },
+      {
+          "name": "AGE",
+          "type": "long",
+          "categorical": true
       }
   ],
   "version": "1.0"

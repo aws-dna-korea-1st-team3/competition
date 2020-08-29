@@ -13,6 +13,10 @@
       },
       {
           "name": "TITLE",
+          "type": "string"
+      },
+      {
+          "name": "TAG",
           "type": "string",
           "categorical": true
       }
