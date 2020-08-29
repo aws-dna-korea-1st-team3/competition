@@ -16,13 +16,15 @@ import (
 )
 
 type user struct {
-	id    string
-	name  string
-	email string
+	id     string
+	name   string
+	email  string
+	gender string
+	age    int
 }
 
 func (u user) toStringArray() []string {
-	return []string{u.id, u.name, u.email}
+	return []string{u.id, u.name, u.email, u.gender, strconv.Itoa(u.age)}
 }
 
 func getTitleReadHead() []string {
@@ -30,7 +32,7 @@ func getTitleReadHead() []string {
 }
 
 func getUserHead() []string {
-	return []string{"USER_ID", "NAME", "EMAIL"}
+	return []string{"USER_ID", "NAME", "EMAIL", "GENDER", "AGE"}
 }
 
 var dvcIDMapGlobal map[string]string = make(map[string]string)
@@ -225,16 +227,44 @@ func processTitleRead(idMap map[string]string) []string {
 	return userIDs
 }
 
+func ageGenerator() int {
+	r := rand.Float64()
+	lastDigit := rand.Intn(10)
+
+	if r < 0.4 {
+		return 10 + lastDigit
+	} else if r < 0.7 {
+		return 20 + lastDigit
+	} else if r < 0.9 {
+		return 30 + lastDigit
+	} else if r < 0.95 {
+		return 40 + lastDigit
+	} else if r < 0.98 {
+		return 50 + lastDigit
+	} else {
+		return 60 + lastDigit
+	}
+}
+
 func processPseudoUserData(userIDs []string) {
 	users := make([][]string, 0, len(userIDs))
 
 	for i, userID := range userIDs {
 		name := "username" + strconv.Itoa(i+1)
 		email := name + "@aws-dna.org"
+		gender := "FEMALE"
+		if rand.Float64() > 0.6 {
+			gender = "MALE"
+		}
+
+		age := ageGenerator()
+
 		users = append(users, user{
-			id:    userID,
-			name:  name,
-			email: email,
+			id:     userID,
+			name:   name,
+			email:  email,
+			gender: gender,
+			age:    age,
 		}.toStringArray())
 	}
 
