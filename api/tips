@@ -1,0 +1,24 @@
+# cdk init
+
+# cdk test
+time cdk destroy; aws s3 rb s3://team3-recommendation-system-personalize-data-jhhwang-cdk --force;
+time cdk deploy; aws s3 cp batch-input.txt.out s3://team3-recommendation-system-personalize-data-jhhwang-cdk/results/by-title-id/batch-input.txt.out;
+
+# api endpoint
+https://{APIGW_ID}.execute-api.ap-northeast-2.amazonaws.com/v1/recommended-titles/by-title
+https://{APIGW_ID}.execute-api.ap-northeast-2.amazonaws.com/v1/recommended-titles/by-title/11?
+https://{APIGW_ID}.execute-api.ap-northeast-2.amazonaws.com/v1/recommended-titles/by-title/11?limit=5
+
+# google doc
+- cdk에서 존재하는 s3 버킷을 읽어 s3 이벤트 추가
+- apigw domain 추가
+
+# TODO
+- API Spec, DB Schema 깃랩에 정리 필요 (팀원들 이해하도록)
+- personalize time 정보 추가하기
+- PIP8 test
+- Aws 학습 자료 정리 필요
+- pinpoint 학습하기
+- 람다 레이어 테스트
+- cdk 유투브 영상
+- cdk 버전 고정 시키기
