@@ -4,9 +4,18 @@ Copied from: https://github.com/mui-org/material-ui/tree/next/examples/nextjs-wi
 
 ## How to use
 
-Install it and run:
+Install it and run in develop environment:
 
 ```sh
 npm install
 npm run dev
 ```
+
+Build and run:
+
+```
+npm install
+npm run build && npm run start
+```
+
+Next.js generates static sites in `/out` directory.

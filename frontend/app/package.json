@@ -12,14 +12,15 @@
   },
   "scripts": {
     "dev": "next",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build && next export",
+    "start": "http-server out",
     "post-update": "echo \"codesandbox preview only, need an update\" && yarn upgrade --latest"
   },
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "http-server": "^0.12.3",
     "typescript": "latest"
   }
 }
