@@ -17,6 +17,12 @@ const theme = createMuiTheme({
       default: '#fff',
     },
   },
+  typography: {
+    fontFamily: "'Spoqa Han Sans', 'Apple SD Gothic Neo', --apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    allVariants: {
+      "letterSpacing": -0.2
+    }
+  }
 });
 
 export default theme;
