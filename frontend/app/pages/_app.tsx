@@ -4,6 +4,7 @@ import { AppProps } from 'next/app';
 import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import theme from '../src/theme';
+import { webfontLoader } from '../src/util';
 
 export default function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
@@ -14,6 +15,7 @@ export default function MyApp(props: AppProps) {
     if (jssStyles) {
       jssStyles.parentElement!.removeChild(jssStyles);
     }
+    webfontLoader();
   }, []);
 
   return (
