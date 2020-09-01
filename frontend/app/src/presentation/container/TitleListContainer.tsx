@@ -13,7 +13,7 @@ const TitleListContainer: React.FC = () => {
     </div>
   }
 
-  return <TitleList titles={data.reverse()} />
+  return <TitleList titles={data} />
 }
 
 export default TitleListContainer;

@@ -4,7 +4,7 @@ const pseudoLatency = 500
 
 export const titleApi = {
   findAll: (): Promise<Title[]> => new Promise(resolve => {
-    setTimeout(() => resolve(titles), pseudoLatency)
+    setTimeout(() => resolve([...titles].reverse()), pseudoLatency)
   }),
   findById: (id: string): Promise<Title> => new Promise((resolve, reject) => {
     setTimeout(() => titlesMappedById[id]

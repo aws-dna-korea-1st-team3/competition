@@ -24,14 +24,14 @@ const useStyle = makeStyles(theme => createStyles({
     fontFamily: "'BM HANNA 11yrs old'",
     textShadow: `5px 5px ${theme.palette.text.disabled}`,
     "&:hover": {
-      color: '#04a6e0'
+      color: theme.palette.primary.main
     }
   },
   "subHeader": {
     fontFamily: "'BM HANNA 11yrs old'",
     textShadow: `2px 2px ${theme.palette.text.disabled}`,
     "&:hover": {
-      color: '#ec912d'
+      color: theme.palette.secondary.main
     }
   }
 }))
@@ -43,7 +43,7 @@ export default function Index() {
       <Box my={4} className={classes.box}>
         <div className={clsx(classes.nonSelectable, classes.textContainer)}>
           <Typography className={classes.subHeader} variant="h4">
-            AWS DNA 1st Team 3
+            AWS DNA 1st :: Team 3
         </Typography>
           <Typography className={classes.mainHeader} variant="h1" component="h1" gutterBottom>
             만화경 작품 추천 시스템
