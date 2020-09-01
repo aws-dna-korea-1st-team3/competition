@@ -14,7 +14,10 @@ const useTitleListStyles = makeStyles(theme => createStyles({
     display: 'flex',
     flexWrap: "wrap",
     justifyContent: "center",
-    margin: `${theme.spacing(5)}px 0`
+    margin: `${theme.spacing(5)}px 0`,
+    "-webkit-user-select": "none",
+    "-webkit-user-drag": "none",
+    "-webkit-app-region": "no-drag",
   }
 }))
 
@@ -65,7 +68,7 @@ const EachTitle: React.FC<{ title: Title }> = ({ title }) => {
     <Link href={`/titles?id=${title.id}`} underline="none">
       <Card elevation={2} className={classes.card}>
         <CardContent>
-          <img className={classes.thumbnail} src={title.thumbnailImageUrl} />
+          <img draggable="false" className={classes.thumbnail} src={title.thumbnailImageUrl} />
           <div className={classes.titleNameAndCreator}>
             <div>
               <Typography variant="h6" className={classes.titleName}>
@@ -74,7 +77,7 @@ const EachTitle: React.FC<{ title: Title }> = ({ title }) => {
             </div>
             <div>
               <Typography className={classes.creatorName}>
-                <img src={title.creator.profileImageUrl} width={22} />
+                <img draggable="false" src={title.creator.profileImageUrl} width={22} />
                 <span>{" " + title.creator.name}</span>
               </Typography>
             </div>
