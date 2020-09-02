@@ -346,7 +346,7 @@ def create_hrnn_batch_inference_job(solutionVersionArn, roleArn):
         roleArn=roleArn,
         jobInput={
             's3DataSource': {
-                'path': f's3://{BUCKET_NAME}/data/user/batch-input-hrnn.txt'
+                'path': f's3://{BUCKET_NAME}/data/title/batch-input-hrnn.txt'
             }
         },
         jobOutput={
@@ -397,7 +397,7 @@ if __name__ == "__main__":
     create_sims_campaign(PersistentValues[SOLUTION_VERSION])
 
     # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
-    # S3 버킷의 data/title/batch-input.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
+    # S3 버킷의 data/title/batch-input-sims.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
     # batch의 output은 S3 버킷의 results/by-title-id/ 이하에 저장됨.
     create_sims_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION],
                                     roleArn=PersistentValues[ROLE])
@@ -411,6 +411,6 @@ if __name__ == "__main__":
     create_hrnn_campaign(PersistentValues[SOLUTION_VERSION])
 
     # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
-    # S3 버킷의 data/title/batch-input.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
+    # S3 버킷의 data/title/batch-input-hrnn.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
     # batch의 output은 S3 버킷의 results/by-user-id/ 이하에 저장됨.
     create_hrnn_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
