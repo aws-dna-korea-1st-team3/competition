@@ -12,7 +12,8 @@ const useStyle = makeStyles(theme => createStyles({
     wordBreak: "keep-all"
   },
   "textContainer": {
-    textAlign: "center"
+    textAlign: "center",
+    marginBottom: theme.spacing(5)
   },
   "nonSelectable": {
     cursor: "default",

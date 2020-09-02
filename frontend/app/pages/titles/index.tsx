@@ -16,10 +16,10 @@ const TitlePage: NextPage = () => {
   return <div>
     <SimpleAppBar label={data?.name || ""} />
     <Container maxWidth="lg">
-    <div>
-      {data ? <TitleDetailContainer title={data} /> : error ? "error" : <SimpleBackdrop />}
-    </div>
-  </Container>
+      <div>
+        {data ? <TitleDetailContainer title={data} /> : error ? "error" : <SimpleBackdrop />}
+      </div>
+    </Container>
   </div>;
 }
 
