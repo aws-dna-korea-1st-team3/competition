@@ -37,6 +37,11 @@ export const titleApi = {
     const titleIds =  cachedRecommendedTitlesIds[_titleId] || shuffle([...titles].map(t => String(t.id))).slice(0, 6)
     cachedRecommendedTitlesIds[_titleId] = titleIds;
     return Promise.all(titleIds.map(id => titleApi.findById(id)))
+  },
+  getRecommendationByUsername: (_username: string): Promise<Title[]> => {
+    const titleIds =  cachedRecommendedTitlesIds[_username] || shuffle([...titles].map(t => String(t.id))).slice(0, 6)
+    cachedRecommendedTitlesIds[_username] = titleIds;
+    return Promise.all(titleIds.map(id => titleApi.findById(id)))
   }
 }
 

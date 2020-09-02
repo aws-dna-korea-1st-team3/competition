@@ -1,10 +1,9 @@
 import * as React from 'react';
 import { Title } from '../../types';
-import { TitleCard } from '../components';
+import { TitleCard, TitleList } from '../components';
 import { makeStyles, createStyles, Typography, CircularProgress } from '@material-ui/core';
 import useSWR from 'swr';
 import { titleApi } from '../../api';
-import Link from '../../Link';
 
 const useStyles = makeStyles(theme => createStyles({
   root: {
@@ -53,15 +52,12 @@ const TitleDetailContainer: React.FC<Props> = ({title}) => {
     <div className={classes.cardWrapper}>
       <TitleCard title={title} />
     </div>
-
     <Typography variant="h4" className={classes.recommendation}>
       이 작품이 좋다면?
     </Typography>
-    <div className={classes.titleContainer}>
       {recommendedTitles
-      ? recommendedTitles.map(t => <Link key={t.id} underline="none" href={`/titles?id=${t.id}`}><TitleCard title={t} /></Link>)
+      ? <TitleList titles={recommendedTitles} />
       : error ? "error" : <CircularProgress color="inherit" />}
-    </div>
   </div>;
 }
  

@@ -6,7 +6,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import { themeCreator } from '../src/theme';
 import { webfontLoader } from '../src/util';
 import { usePersistentDarkModePreference } from '../src/util';
-import { ColorModeChangeButton } from '../src/presentation/components';
+import { ColorModeChangeButton, MyPageButton } from '../src/presentation/components';
 
 export default function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
@@ -36,6 +36,7 @@ export default function MyApp(props: AppProps) {
         {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
         <CssBaseline />
         <ColorModeChangeButton isDark={prefersDarkMode} toggle={toggleColorMode} />
+        <MyPageButton />
         <Component {...pageProps} />
       </ThemeProvider>
     </React.Fragment>

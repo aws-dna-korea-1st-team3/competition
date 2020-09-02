@@ -8,12 +8,11 @@ interface Props {
   titles: Title[]
 }
 
-const useTitleListStyles = makeStyles(theme => createStyles({
+const useTitleListStyles = makeStyles(createStyles({
   listContainer: {
     display: 'flex',
     flexWrap: "wrap",
     justifyContent: "center",
-    margin: `${theme.spacing(5)}px 0`
   },
   link: {
     "&:hover": {
