@@ -1,6 +1,28 @@
 import { Title } from "../types"
 
+// https://stackoverflow.com/a/2450976
+function shuffle<T>(array: Array<T>) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
 const pseudoLatency = 500
+
+const cachedRecommendedTitlesIds: {[x:string]: string[]} = {}
 
 export const titleApi = {
   findAll: (): Promise<Title[]> => new Promise(resolve => {
@@ -10,7 +32,12 @@ export const titleApi = {
     setTimeout(() => titlesMappedById[id]
       ? resolve(titlesMappedById[id])
       : reject(Error("non existent title #" + id)), pseudoLatency)
-  })
+  }),
+  getRecommendationByTitleId: (_titleId: string): Promise<Title[]> => {
+    const titleIds =  cachedRecommendedTitlesIds[_titleId] || shuffle([...titles].map(t => String(t.id))).slice(0, 6)
+    cachedRecommendedTitlesIds[_titleId] = titleIds;
+    return Promise.all(titleIds.map(id => titleApi.findById(id)))
+  }
 }
 
 const titlesMappedById: { [x: string]: Title } = {

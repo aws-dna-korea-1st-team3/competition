@@ -10,7 +10,7 @@ interface Props {
 const useStyles = makeStyles(theme => createStyles({
   icon: {
     position: "absolute",
-    top: theme.spacing(2),
+    top: theme.spacing(1),
     right: theme.spacing(2),
     opacity: 0.5,
     zIndex: theme.zIndex.snackbar
