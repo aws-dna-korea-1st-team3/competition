@@ -3,8 +3,9 @@ import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
 import { titleApi } from '../../src/api';
-import { SimpleBackdrop } from '../../src/presentation/components';
+import { SimpleBackdrop, SimpleAppBar } from '../../src/presentation/components';
 import { Container } from '@material-ui/core';
+import { TitleDetailContainer } from '../../src/presentation/container';
 
 const TitlePage: NextPage = () => {
   const router = useRouter();
@@ -12,11 +13,14 @@ const TitlePage: NextPage = () => {
 
   const { data, error } = useSWR(`/titles/${id}`, () => titleApi.findById(id))
 
-  return <Container maxWidth="lg">
+  return <div>
+    <SimpleAppBar label={data?.name || ""} />
+    <Container maxWidth="lg">
     <div>
-      {data ? JSON.stringify(data) : error ? "error" : <SimpleBackdrop />}
+      {data ? <TitleDetailContainer title={data} /> : error ? "error" : <SimpleBackdrop />}
     </div>
-  </Container>;
+  </Container>
+  </div>;
 }
 
 export default TitlePage;
