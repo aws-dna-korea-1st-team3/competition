@@ -26,14 +26,7 @@ const useStyles = makeStyles(theme => createStyles({
   },
   titleContainer: {
     display: 'flex',
-    flexWrap: "wrap",
     justifyContent: "center",
-    "& > a": {
-      "&:hover": {
-        opacity: 0.5,
-        cursor: "pointer"
-      }
-    }
   }
 }))
 
@@ -55,9 +48,11 @@ const TitleDetailContainer: React.FC<Props> = ({title}) => {
     <Typography variant="h4" className={classes.recommendation}>
       이 작품이 좋다면?
     </Typography>
+    <div className={classes.titleContainer}>
       {recommendedTitles
       ? <TitleList titles={recommendedTitles} />
       : error ? "error" : <CircularProgress color="inherit" />}
+    </div>
   </div>;
 }
  
