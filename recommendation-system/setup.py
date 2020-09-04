@@ -5,11 +5,12 @@ import os.path
 import time
 import constant
 import util
+import asyncio
 
 from botocore.exceptions import ClientError
 from constant import REGION, BUCKET_NAME, DATA_DIRECTORY, TITLE, USER, TITLE_READ, ROLE_NAME, SOLUTION_NAME_SIMS, \
-    SOLUTION_NAME_HRNN, SOLUTION_VERSION, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_HRNN, ROLE, POLICY, DSG, DSG_NAME, \
-    TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION, SOLUTION_VERSION, CAMPAIGN
+    SOLUTION_NAME_HRNN, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_HRNN, ROLE, POLICY, DSG, DSG_NAME, \
+    TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION_SIMS, SOLUTION_HRNN, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_HRNN, CAMPAIGN_SIMS, CAMPAIGN_HRNN
 from persistent_value import PersistentValues, write
 
 # aws clients
@@ -224,17 +225,17 @@ def import_dataset(titleDatasetArn, userDatasetArn, titleReadDatasetArn):
         expectedStatus="ACTIVE")
 
 
-def create_sims_solution(dsg_arn):
+async def create_sims_solution(dsg_arn):
     solution_response = personalize.create_solution(
         name=SOLUTION_NAME_SIMS,
         datasetGroupArn=dsg_arn,
         recipeArn='arn:aws:personalize:::recipe/aws-sims')
 
     solution_arn = solution_response['solutionArn']
-    PersistentValues[SOLUTION] = solution_arn
+    PersistentValues[SOLUTION_SIMS] = solution_arn
     write(PersistentValues)
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_solution(solutionArn=solution_arn)['solution']["status"],
         messagePrefix="Creating a sims solution...",
         expectedStatus="ACTIVE")
@@ -243,33 +244,33 @@ def create_sims_solution(dsg_arn):
         solutionArn=solution_arn)
     solution_version_arn = solution_version_response['solutionVersionArn']
 
-    PersistentValues[SOLUTION_VERSION] = solution_version_arn
+    PersistentValues[SOLUTION_VERSION_SIMS] = solution_version_arn
     write(PersistentValues)
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_solution_version(
             solutionVersionArn=solution_version_arn)['solutionVersion']['status'],
         messagePrefix="Creating a sims solution version...",
         expectedStatus="ACTIVE")
 
 
-def create_sims_campaign(solutionVersionArn):
+async def create_sims_campaign(solutionVersionArn):
     response = personalize.create_campaign(
         name=CAMPAIGN_NAME_SIMS,
         solutionVersionArn=solutionVersionArn,
         minProvisionedTPS=1)
 
     arn = response['campaignArn']
-    PersistentValues[CAMPAIGN] = arn
+    PersistentValues[CAMPAIGN_SIMS] = arn
     write(PersistentValues)
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_campaign(campaignArn=arn)['campaign']['status'],
         messagePrefix="Creating a sims campaign...",
         expectedStatus="ACTIVE")
 
 
-def create_sims_batch_inference_job(solutionVersionArn, roleArn):
+async def create_sims_batch_inference_job(solutionVersionArn, roleArn):
     batchInferenceJobArn = personalize.create_batch_inference_job(
         jobName="manhwakyung-title-recommendation-batch-" + util.get_random_string(8),
         solutionVersionArn=solutionVersionArn,
@@ -286,7 +287,7 @@ def create_sims_batch_inference_job(solutionVersionArn, roleArn):
         }
     )['batchInferenceJobArn']
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="":
         personalize.describe_batch_inference_job(batchInferenceJobArn=batchInferenceJobArn)['batchInferenceJob'][
             'status'],
@@ -294,17 +295,17 @@ def create_sims_batch_inference_job(solutionVersionArn, roleArn):
         expectedStatus="ACTIVE")
 
 
-def create_hrnn_solution(dsg_arn):
+async def create_hrnn_solution(dsg_arn):
     solution_response = personalize.create_solution(
         name=SOLUTION_NAME_HRNN,
         datasetGroupArn=dsg_arn,
         recipeArn='arn:aws:personalize:::recipe/aws-hrnn')
 
     solution_arn = solution_response['solutionArn']
-    PersistentValues[SOLUTION] = solution_arn
+    PersistentValues[SOLUTION_HRNN] = solution_arn
     write(PersistentValues)
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_solution(solutionArn=solution_arn)['solution']["status"],
         messagePrefix="Creating a hrnn solution...",
         expectedStatus="ACTIVE")
@@ -313,33 +314,33 @@ def create_hrnn_solution(dsg_arn):
         solutionArn=solution_arn)
     solution_version_arn = solution_version_response['solutionVersionArn']
 
-    PersistentValues[SOLUTION_VERSION] = solution_version_arn
+    PersistentValues[SOLUTION_VERSION_HRNN] = solution_version_arn
     write(PersistentValues)
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_solution_version(
             solutionVersionArn=solution_version_arn)['solutionVersion']['status'],
         messagePrefix="Creating a hrnn solution version...",
         expectedStatus="ACTIVE")
 
 
-def create_hrnn_campaign(solutionVersionArn):
+async def create_hrnn_campaign(solutionVersionArn):
     response = personalize.create_campaign(
         name=CAMPAIGN_NAME_HRNN,
         solutionVersionArn=solutionVersionArn,
         minProvisionedTPS=1)
 
     arn = response['campaignArn']
-    PersistentValues[CAMPAIGN] = arn
+    PersistentValues[CAMPAIGN_HRNN] = arn
     write(PersistentValues)
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_campaign(campaignArn=arn)['campaign']['status'],
         messagePrefix="Creating a hrnn campaign...",
         expectedStatus="ACTIVE")
 
 
-def create_hrnn_batch_inference_job(solutionVersionArn, roleArn):
+async def create_hrnn_batch_inference_job(solutionVersionArn, roleArn):
     batchInferenceJobArn = personalize.create_batch_inference_job(
         jobName="manhwakyung-title-recommendation-batch-" + util.get_random_string(8),
         solutionVersionArn=solutionVersionArn,
@@ -356,13 +357,47 @@ def create_hrnn_batch_inference_job(solutionVersionArn, roleArn):
         }
     )['batchInferenceJobArn']
 
-    util.wait_until_status(
+    await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="":
         personalize.describe_batch_inference_job(batchInferenceJobArn=batchInferenceJobArn)['batchInferenceJob'][
             'status'],
         messagePrefix="Running hrnn batch inference job...",
         expectedStatus="ACTIVE")
 
+async def create_recommendation_data_sims():
+    ### sims recipe(작품별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
+
+    # Persoanlize Solution및 Solution Version 생성
+    await create_sims_solution(PersistentValues[DSG])
+
+    # Persoanlize Campaign 생성
+    await create_sims_campaign(PersistentValues[SOLUTION_VERSION_SIMS])
+
+    # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
+    # S3 버킷의 data/title/batch-input-sims.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
+    # batch의 output은 S3 버킷의 results/by-title-id/ 이하에 저장됨.
+    await create_sims_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION_SIMS],
+                                    roleArn=PersistentValues[ROLE])
+
+async def create_recommendation_data_hrnn():
+    ### hrnn recipe(사용자별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
+
+    # Persoanlize Solution및 Solution Version 생성
+    await create_hrnn_solution(PersistentValues[DSG])
+
+    # Persoanlize Campaign 생성
+    await create_hrnn_campaign(PersistentValues[SOLUTION_VERSION_HRNN])
+
+    # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
+    # S3 버킷의 data/title/batch-input-hrnn.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
+    # batch의 output은 S3 버킷의 results/by-user-id/ 이하에 저장됨.
+    await create_hrnn_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION_HRNN], roleArn=PersistentValues[ROLE])
+
+# 여러가지 추천 데이터 생성 작업을 병렬로 진행.
+async def create_recommendation_data(): 
+    await asyncio.gather(
+          asyncio.create_task(create_recommendation_data_sims()),
+          asyncio.create_task(create_recommendation_data_hrnn()))
 
 if __name__ == "__main__":
 
@@ -386,31 +421,5 @@ if __name__ == "__main__":
       titleDatasetArn=PersistentValues[TITLE_DATASET],
       userDatasetArn=PersistentValues[USER_DATASET],
       titleReadDatasetArn=PersistentValues[TITLE_READ_DATASET])
-
-
-    ### sims recipe(작품별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
-
-    # Persoanlize Solution및 Solution Version 생성
-    create_sims_solution(PersistentValues[DSG])
-
-    # Persoanlize Campaign 생성
-    create_sims_campaign(PersistentValues[SOLUTION_VERSION])
-
-    # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
-    # S3 버킷의 data/title/batch-input-sims.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
-    # batch의 output은 S3 버킷의 results/by-title-id/ 이하에 저장됨.
-    create_sims_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION],
-                                    roleArn=PersistentValues[ROLE])
-
-    ### hrnn recipe(사용자별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
-
-    # Persoanlize Solution및 Solution Version 생성
-    create_hrnn_solution(PersistentValues[DSG])
-
-    # Persoanlize Campaign 생성
-    create_hrnn_campaign(PersistentValues[SOLUTION_VERSION])
-
-    # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
-    # S3 버킷의 data/title/batch-input-hrnn.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
-    # batch의 output은 S3 버킷의 results/by-user-id/ 이하에 저장됨.
-    create_hrnn_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
+    
+    asyncio.run(create_recommendation_data())

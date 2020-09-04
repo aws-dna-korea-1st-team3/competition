@@ -7,7 +7,7 @@ import constant
 import util
 
 from botocore.exceptions import ClientError
-from constant import REGION, BUCKET_NAME, DATA_DIRECTORY, TITLE, USER, TITLE_READ, ROLE_NAME, SOLUTION_NAME_SIMS, SOLUTION_NAME_HRNN, SOLUTION_VERSION, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_HRNN, ROLE, POLICY, DSG, DSG_NAME, TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION, SOLUTION_VERSION, CAMPAIGN
+from constant import REGION, BUCKET_NAME, DATA_DIRECTORY, TITLE, USER, TITLE_READ, ROLE_NAME, SOLUTION_NAME_SIMS, SOLUTION_NAME_HRNN, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_HRNN, ROLE, POLICY, DSG, DSG_NAME, TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION_SIMS, SOLUTION_HRNN, CAMPAIGN_SIMS, CAMPAIGN_HRNN
 from persistent_value import PersistentValues, write 
 
 # aws clients
@@ -18,16 +18,16 @@ s3 = boto3.client('s3', region_name=REGION)
 iam_client = boto3.client('iam', region_name=REGION)
 iam_resource = boto3.resource('iam', region_name=REGION)
 
-def delete_campaign(campaignArn):
+def delete_campaign(campaignArn, campaignName):
     try:
       personalize.delete_campaign(campaignArn=campaignArn)
       util.wait_until_status(
           lambdaToGetStatus=lambda _="": personalize.describe_campaign(campaignArn=campaignArn)['campaign']['status'],
-          messagePrefix="Deleting a campaign...",
+          messagePrefix=f"Deleting {campaignName} campaign...",
           expectedStatus="DELETED")
 
     except:
-        logging.info("The campaign has been deleted.")
+        logging.info(f"The {campaignName} campaign has been deleted.")
 
 def delete_dataset(arns):
     logging.info("Delete dataset: " + ", ".join(arns))
@@ -79,8 +79,12 @@ def delete_bucket():
     s3.delete_bucket(Bucket=BUCKET_NAME)
 
 if __name__ == "__main__":
-    delete_campaign(PersistentValues[CAMPAIGN])
-    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION])
+    delete_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
+    delete_campaign(PersistentValues[CAMPAIGN_HRNN], "hrnn")
+
+    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_SIMS])
+    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_HRNN])
+
     delete_dataset([PersistentValues[TITLE_DATASET], PersistentValues[USER_DATASET], PersistentValues[TITLE_READ_DATASET]])
     delete_dataset_group(PersistentValues[DSG])
     delete_schemas([PersistentValues[TITLE], PersistentValues[USER], PersistentValues[TITLE_READ]])

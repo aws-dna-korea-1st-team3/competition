@@ -4,6 +4,7 @@ import os
 import time
 import random
 import string
+import asyncio
 
 logging.basicConfig(level=logging.INFO)
 
@@ -36,6 +37,16 @@ def wait_until_status(lambdaToGetStatus, messagePrefix, expectedStatus):
         if status != expectedStatus:
             logging.info(messagePrefix + " current status: " + status + get_next_dots())
             time.sleep(1.5)
+        else:
+            logging.info("expected status achieved: " + status)
+            break
+
+async def wait_until_status_async(lambdaToGetStatus, messagePrefix, expectedStatus):
+    while True:
+        status = lambdaToGetStatus()
+        if status != expectedStatus:
+            logging.info(messagePrefix + " current status: " + status + get_next_dots())
+            await asyncio.sleep(1.5)
         else:
             logging.info("expected status achieved: " + status)
             break
