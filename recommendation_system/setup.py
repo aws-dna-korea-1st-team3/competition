@@ -340,30 +340,6 @@ async def create_hrnn_campaign(solutionVersionArn):
         expectedStatus="ACTIVE")
 
 
-async def create_hrnn_batch_inference_job(solutionVersionArn, roleArn):
-    batchInferenceJobArn = personalize.create_batch_inference_job(
-        jobName="manhwakyung-title-recommendation-batch-" + util.get_random_string(8),
-        solutionVersionArn=solutionVersionArn,
-        roleArn=roleArn,
-        jobInput={
-            's3DataSource': {
-                'path': f's3://{BUCKET_NAME}/data/title/batch-input-hrnn.txt'
-            }
-        },
-        jobOutput={
-            's3DataDestination': {
-                'path': f's3://{BUCKET_NAME}/results/by-user-id/'
-            }
-        }
-    )['batchInferenceJobArn']
-
-    await util.wait_until_status_async(
-        lambdaToGetStatus=lambda _="":
-        personalize.describe_batch_inference_job(batchInferenceJobArn=batchInferenceJobArn)['batchInferenceJob'][
-            'status'],
-        messagePrefix="Running hrnn batch inference job...",
-        expectedStatus="ACTIVE")
-
 async def create_recommendation_data_sims():
     ### sims recipe(작품별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
 
@@ -379,6 +355,7 @@ async def create_recommendation_data_sims():
     await create_sims_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION_SIMS],
                                     roleArn=PersistentValues[ROLE])
 
+
 async def create_recommendation_data_hrnn():
     ### hrnn recipe(사용자별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
 
@@ -387,11 +364,6 @@ async def create_recommendation_data_hrnn():
 
     # Persoanlize Campaign 생성
     await create_hrnn_campaign(PersistentValues[SOLUTION_VERSION_HRNN])
-
-    # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
-    # S3 버킷의 data/title/batch-input-hrnn.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
-    # batch의 output은 S3 버킷의 results/by-user-id/ 이하에 저장됨.
-    await create_hrnn_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION_HRNN], roleArn=PersistentValues[ROLE])
 
 # 여러가지 추천 데이터 생성 작업을 병렬로 진행.
 async def create_recommendation_data(): 
@@ -423,3 +395,12 @@ if __name__ == "__main__":
       titleReadDatasetArn=PersistentValues[TITLE_READ_DATASET])
     
     asyncio.run(create_recommendation_data())
+
+    # 유저 기반 추천 예시
+    userId = 'cce93dce-b13a-4cd3-9380-008d48e6a53c'
+    response = personalize_runtime.get_recommendations(
+        campaignArn=PersistentValues[CAMPAIGN_HRNN],
+        userId='User ID')
+    print("Recommended items by user " + userId)
+    for item in response['itemList']:
+        print (item['itemId'])
