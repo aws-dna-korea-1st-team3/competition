@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-REGION='ap-northeast-2'
+REGION='ap-northeast-1'
 
-BUCKET_NAME = "team3-recommendation-system-personalize-data-2"
+BUCKET_NAME = "team3-recommendation-system-personalize-data-3"
 DATA_DIRECTORY = "data"
 
 TITLE = "title"
