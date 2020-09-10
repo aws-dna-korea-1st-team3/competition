@@ -17,6 +17,8 @@ SAMPLE_DATA_DIRECTORY = "data"
 TITLE = "title"
 USER = "user"
 TITLE_READ = "title-read"
+GLUE_DATABASE_NAME = "dna-database"
+CRAWLER_SCHEDULE = "cron(0/5 * * * ? *)"
 
 
 class PreprocessingStack(core.Stack):
@@ -25,7 +27,7 @@ class PreprocessingStack(core.Stack):
         super().__init__(scope, id, **kwargs)
         
         s3_org_data = _s3.Bucket(self, ORIGINAL_DATA_BUCKET_NAME, bucket_name=ORIGINAL_DATA_BUCKET_NAME, removal_policy=core.RemovalPolicy.RETAIN)
-        s3_transformed_data = _s3.Bucket(self, TRANSFORMED_DATA_BUCKET_NAME, bucket_name=TRANSFORMED_DATA_BUCKET_NAME, removal_policy=core.RemovalPolicy.RETAIN)
+        s3_transformed_data = _s3.Bucket(self, TRANSFORMED_DATA_BUCKET_NAME, bucket_name=TRANSFORMED_DATA_BUCKET_NAME, removal_policy=core.RemovalPolicy.DESTROY)
 
         # title-read
         s3_deployment.BucketDeployment(
@@ -43,32 +45,65 @@ class PreprocessingStack(core.Stack):
             destination_bucket=s3_org_data,destination_key_prefix="{}/".format(USER)
         )   
 
-        statement = iam.PolicyStatement(actions=["s3:GetObject","s3:PutObject"],
-                                        resources=["arn:aws:s3:::{}".format(ORIGINAL_DATA_BUCKET_NAME),
-                                                    "arn:aws:s3:::{}".format(TRANSFORMED_DATA_BUCKET_NAME)])
+        statement = iam.PolicyStatement(actions=["s3:*", "glue:*", "iam:ListRolePolicies", "iam:GetRole", "iam:GetRolePolicy"],
+                                        resources=["*"])
         write_to_s3_policy = iam.PolicyDocument(statements=[statement])
 
         glue_role = iam.Role(
-            self, 'GlueCrawlerRole',
-            role_name = 'GlueCrawlerRole',
+            self, 'GlueCrawlerRole-dna',
+            role_name='GlueCrawlerRole-dna',
             inline_policies=[write_to_s3_policy],
             assumed_by=iam.ServicePrincipal('glue.amazonaws.com'),
             managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSGlueServiceRole')]
         )
 
+        glue.Database(
+            self, "dna-glue-database-id", database_name=GLUE_DATABASE_NAME
+        )
 
-        glue_crawler = glue.CfnCrawler(
-            self, 'title-read-crawler-id',
-            description="Glue Crawler for title-read",
-            name='title-read-crawler',
-            database_name='units',
-            schedule={"scheduleExpression": "cron(5 * * * ? *)"},
+
+        title_ad_crawler = glue.CfnCrawler(
+            self, '{}-crawler-id'.format(TITLE_READ),
+            description="Glue Crawler for {}".format(TITLE_READ),
+            name='{}-crawler'.format(TITLE_READ),
+            database_name=GLUE_DATABASE_NAME,
+            schedule={"scheduleExpression": CRAWLER_SCHEDULE},
             role=glue_role.role_arn,
             targets={"s3Targets": [{"path": "s3://{}/{}/{}.csv".format(ORIGINAL_DATA_BUCKET_NAME, TITLE_READ, TITLE_READ)}]}
         )
 
+        title_crawler = glue.CfnCrawler(
+            self, '{}-crawler-id'.format(TITLE),
+            description="Glue Crawler for {}".format(TITLE),
+            name='{}-crawler'.format(TITLE),
+            database_name=GLUE_DATABASE_NAME,
+            schedule={"scheduleExpression": CRAWLER_SCHEDULE},
+            role=glue_role.role_arn,
+            targets={"s3Targets": [{"path": "s3://{}/{}/{}.csv".format(ORIGINAL_DATA_BUCKET_NAME, TITLE, TITLE)}]}
+        )
 
+        user_crawler = glue.CfnCrawler(
+            self, '{}-crawler-id'.format(USER),
+            description="Glue Crawler for {}".format(USER),
+            name='{}-crawler'.format(USER),
+            database_name=GLUE_DATABASE_NAME,
+            schedule={"scheduleExpression": CRAWLER_SCHEDULE},
+            role=glue_role.role_arn,
+            targets={"s3Targets": [{"path": "s3://{}/{}/{}.csv".format(ORIGINAL_DATA_BUCKET_NAME, USER, USER)}]}
+        )
 
-
+        # glue.CfnJob(
+        #     self, "{}-job-id".format(TITLE_READ),
+        #     name="{}-job".format(TITLE_READ),
+        #     command={
+        #         "name": "glueetl",
+        #         "python_version": "3",
+        #         "script_location": "s3://{}/glue/spark/__main__.py".format(ORIGINAL_DATA_BUCKET_NAME)
+        #     },
+        #     role=glue_role.role_arn,
+        #     worker_type="Standard",
+        #
+        # )
+        
 
     
