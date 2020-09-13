@@ -42,14 +42,14 @@ func main() {
 	os.RemoveAll(outputDirectory)
 	os.Mkdir(outputDirectory, 0755)
 
-	idMap := processTitle()
-	userIDMap := processTitleRead(idMap)
+	titleMappedByID := processTitle()
+	userIDMap := processTitleRead(titleMappedByID)
 	processPseudoUserData(userIDMap)
 
 	return
 }
 
-func processTitle() map[string]string {
+func processTitle() map[string][]string {
 	// Data format
 	// "ITEM_ID","CREATION_TIMESTAMP","TITLE"
 	// "1","2019-08-16 04:48:10.032","개구리공주"
@@ -93,7 +93,13 @@ func processTitle() map[string]string {
 	os.Mkdir(outputDirectory+"/title", 0755)
 	writeCsv(append([][]string{head}, modifiedData...), "output/title/title.csv")
 
-	return idMap
+	titleMappedByID := make(map[string][]string)
+
+	for _, r := range data {
+		titleMappedByID[r[0]] = r
+	}
+
+	return titleMappedByID
 }
 
 // Return format
@@ -119,6 +125,20 @@ func preprocessTitleAndTagData() [][]string {
 	titleRows := readCsvFile("input/title/title.csv")
 	titleHead := titleRows[0]
 	titleData := titleRows[1:]
+
+	// shuffle title names
+	titleNames := []string{}
+	for _, titleRow := range titleData {
+		titleNames = append(titleNames, titleRow[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(titleNames), func(i, j int) { titleNames[i], titleNames[j] = titleNames[j], titleNames[i] })
+
+	for i := range titleData {
+		titleData[i][2] = titleNames[i]
+	}
+	// shuffle end
 
 	tagRows := readCsvFile("input/tag/tag.csv")
 	tagData := tagRows[1:]
@@ -155,23 +175,10 @@ func preprocessTitleAndTagData() [][]string {
 
 	titleHead = append(titleHead, "TAG")
 
-	// shuffle title names
-	titleNames := []string{}
-	for _, titleRow := range titleData {
-		titleNames = append(titleNames, titleRow[2])
-	}
-
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(titleNames), func(i, j int) { titleNames[i], titleNames[j] = titleNames[j], titleNames[i] })
-
-	for i := range titleData {
-		titleData[i][2] = titleNames[i]
-	}
-
 	return append([][]string{titleHead}, titleData...)
 }
 
-func processTitleRead(idMap map[string]string) []string {
+func processTitleRead(titleMappedByID map[string][]string) []string {
 	inputDir := "input/title-read"
 	files, err := ioutil.ReadDir(inputDir)
 	check(err)
@@ -207,7 +214,8 @@ func processTitleRead(idMap map[string]string) []string {
 
 	for i := 0; i < len(rows); i++ {
 		rows[i][0] = dvcIDMap[rows[i][0]]
-		rows[i][1] = idMap[rows[i][1]]
+		rows[i][1] = titleMappedByID[rows[i][1]][0]
+		rows[i][3] = titleMappedByID[rows[i][1]][2]
 	}
 
 	rowsDividedByMonth := divideByMonth(rows)
