@@ -24,10 +24,11 @@ def run_ctas(athena_client, basic_dt, data_name):
 
     new_table_name = '{table}_{year}{month:02}{day:02}'.format(table=str(data_name).replace("-", "_"),
                                                                year=year, month=month, day=day)
+    avro_dir_name = data_name + "/" + new_table_name
 
 
     query = CTAS_QUERY_FMT.format(database_name=DATABASE_NAME, ctas_table_name=new_table_name, bucket_name=BUCKET_NAME,
-                                  directory=data_name, origin_table_name=str(data_name).replace("-", "_")+"_table")
+                                  directory=avro_dir_name, origin_table_name=str(data_name).replace("-", "_")+"_table")
 
     print('[INFO] QueryString:\n{}'.format(query))
 

@@ -13,6 +13,7 @@ aws-cdk.aws-events==1.61.1
 aws-cdk.aws-iam==1.61.1
 aws-cdk.aws-kms==1.61.1
 aws-cdk.aws-lambda==1.61.1
+aws-cdk.aws-events-targets==1.61.1
 aws-cdk.aws-logs==1.61.1
 aws-cdk.aws-s3==1.61.1
 aws-cdk.aws-s3-assets==1.61.1
@@ -20,6 +21,7 @@ aws-cdk.aws-sns==1.61.1
 aws-cdk.aws-sqs==1.61.1
 aws-cdk.aws-ssm==1.61.1
 aws-cdk.aws-glue==1.61.1
+aws-cdk.aws-athena==1.61.1
 aws-cdk.aws-s3-deployment==1.61.1
 aws-cdk.cloud-assembly-schema==1.61.1
 aws-cdk.core==1.61.1
