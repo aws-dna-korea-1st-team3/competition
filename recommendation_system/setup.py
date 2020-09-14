@@ -9,8 +9,8 @@ import asyncio
 
 from botocore.exceptions import ClientError
 from constant import REGION, BUCKET_NAME, DATA_DIRECTORY, TITLE, USER, TITLE_READ, ROLE_NAME, SOLUTION_NAME_SIMS, \
-    SOLUTION_NAME_HRNN, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_HRNN, ROLE, POLICY, DSG, DSG_NAME, \
-    TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION_SIMS, SOLUTION_HRNN, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_HRNN, CAMPAIGN_SIMS, CAMPAIGN_HRNN
+    SOLUTION_NAME_UP, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_UP, ROLE, POLICY, DSG, DSG_NAME, \
+    TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION_SIMS, SOLUTION_UP, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_UP, CAMPAIGN_SIMS, CAMPAIGN_UP, FILTER_UP
 from persistent_value import PersistentValues, write
 
 # aws clients
@@ -68,8 +68,8 @@ def upload_data():
 
     sims_batch_input_path = "data/title/batch-input-sims.txt"
     s3.meta.client.upload_file(sims_batch_input_path, BUCKET_NAME, sims_batch_input_path)
-    hrnn_batch_input_path = "data/title/batch-input-hrnn.txt"
-    s3.meta.client.upload_file(hrnn_batch_input_path, BUCKET_NAME, hrnn_batch_input_path)
+    up_batch_input_path = "data/user/batch-input-up.txt"
+    s3.meta.client.upload_file(up_batch_input_path, BUCKET_NAME, up_batch_input_path)
 
 
 def create_role():
@@ -225,6 +225,17 @@ def import_dataset(titleDatasetArn, userDatasetArn, titleReadDatasetArn):
         expectedStatus="ACTIVE")
 
 
+def create_filter(dsg_arn):
+    filer_response = personalize.create_filter(
+        name='FILTER_USER_PERSONALIZATION',
+        datasetGroupArn=dsg_arn,
+        filterExpression='EXCLUDE itemId WHERE INTERACTIONS.event_type in ("title-read")')
+
+    filter_arn = filer_response['filterArn']
+    PersistentValues[FILTER_UP] = filter_arn
+    write(PersistentValues)
+
+
 async def create_sims_solution(dsg_arn):
     solution_response = personalize.create_solution(
         name=SOLUTION_NAME_SIMS,
@@ -295,48 +306,48 @@ async def create_sims_batch_inference_job(solutionVersionArn, roleArn):
         expectedStatus="ACTIVE")
 
 
-async def create_hrnn_solution(dsg_arn):
+async def create_up_solution(dsg_arn):
     solution_response = personalize.create_solution(
-        name=SOLUTION_NAME_HRNN,
+        name=SOLUTION_NAME_UP,
         datasetGroupArn=dsg_arn,
-        recipeArn='arn:aws:personalize:::recipe/aws-hrnn')
+        recipeArn='arn:aws:personalize:::recipe/aws-user-personalization')
 
     solution_arn = solution_response['solutionArn']
-    PersistentValues[SOLUTION_HRNN] = solution_arn
+    PersistentValues[SOLUTION_UP] = solution_arn
     write(PersistentValues)
 
     await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_solution(solutionArn=solution_arn)['solution']["status"],
-        messagePrefix="Creating a hrnn solution...",
+        messagePrefix="Creating a up solution...",
         expectedStatus="ACTIVE")
 
     solution_version_response = personalize.create_solution_version(
         solutionArn=solution_arn)
     solution_version_arn = solution_version_response['solutionVersionArn']
 
-    PersistentValues[SOLUTION_VERSION_HRNN] = solution_version_arn
+    PersistentValues[SOLUTION_VERSION_UP] = solution_version_arn
     write(PersistentValues)
 
     await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_solution_version(
             solutionVersionArn=solution_version_arn)['solutionVersion']['status'],
-        messagePrefix="Creating a hrnn solution version...",
+        messagePrefix="Creating a up solution version...",
         expectedStatus="ACTIVE")
 
 
-async def create_hrnn_campaign(solutionVersionArn):
+async def create_up_campaign(solutionVersionArn):
     response = personalize.create_campaign(
-        name=CAMPAIGN_NAME_HRNN,
+        name=CAMPAIGN_NAME_UP,
         solutionVersionArn=solutionVersionArn,
         minProvisionedTPS=1)
 
     arn = response['campaignArn']
-    PersistentValues[CAMPAIGN_HRNN] = arn
+    PersistentValues[CAMPAIGN_UP] = arn
     write(PersistentValues)
 
     await util.wait_until_status_async(
         lambdaToGetStatus=lambda _="": personalize.describe_campaign(campaignArn=arn)['campaign']['status'],
-        messagePrefix="Creating a hrnn campaign...",
+        messagePrefix="Creating a up campaign...",
         expectedStatus="ACTIVE")
 
 
@@ -356,20 +367,20 @@ async def create_recommendation_data_sims():
                                     roleArn=PersistentValues[ROLE])
 
 
-async def create_recommendation_data_hrnn():
-    ### hrnn recipe(사용자별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
+async def create_recommendation_data_up():
+    ### user-personalization recipe(사용자별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
 
     # Persoanlize Solution및 Solution Version 생성
-    await create_hrnn_solution(PersistentValues[DSG])
+    await create_up_solution(PersistentValues[DSG])
 
     # Persoanlize Campaign 생성
-    await create_hrnn_campaign(PersistentValues[SOLUTION_VERSION_HRNN])
+    await create_up_campaign(PersistentValues[SOLUTION_VERSION_UP])
 
 # 여러가지 추천 데이터 생성 작업을 병렬로 진행.
 async def create_recommendation_data(): 
     await asyncio.gather(
           asyncio.create_task(create_recommendation_data_sims()),
-          asyncio.create_task(create_recommendation_data_hrnn()))
+          asyncio.create_task(create_recommendation_data_up()))
 
 if __name__ == "__main__":
 
@@ -393,14 +404,19 @@ if __name__ == "__main__":
       titleDatasetArn=PersistentValues[TITLE_DATASET],
       userDatasetArn=PersistentValues[USER_DATASET],
       titleReadDatasetArn=PersistentValues[TITLE_READ_DATASET])
-    
+
+    # 이미 본 작품을 배재하고 추천하기 위한 필터 생성(User-Personalization에서 사용)
+    create_filter(PersistentValues[DSG])
+
+    # sims recipe, user-personalization recipe 병렬로 진행(약 1시간 30분 ~ 2시간)
     asyncio.run(create_recommendation_data())
 
     # 유저 기반 추천 예시
     userId = 'cce93dce-b13a-4cd3-9380-008d48e6a53c'
     response = personalize_runtime.get_recommendations(
-        campaignArn=PersistentValues[CAMPAIGN_HRNN],
-        userId='User ID')
+        campaignArn=PersistentValues[CAMPAIGN_UP],
+        userId='User ID',
+        filterArn=PersistentValues[FILTER_UP])
     print("Recommended items by user " + userId)
     for item in response['itemList']:
-        print (item['itemId'])
+        print(item['itemId'])
