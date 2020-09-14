@@ -16,7 +16,7 @@
           "type": "string"
       },
       {
-          "name": "TAG",
+          "name": "GENRE",
           "type": "string",
           "categorical": true
       }
