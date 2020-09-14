@@ -127,8 +127,8 @@ def create_campaign():
                                                                 'StartTime': 'IMMEDIATE',
                                                                 'Timezone': 'UTC+09'}})
     logger.info('Creating Campaign({}) >> Success'.format(CAMPAIGN_NAME))
-    campaign_id = campaign_response['campaignArn']
-    PersistentValues[CAMPAIGN_NAME] = campaign_id
+    campaign_arn = campaign_response['campaignArn']
+    PersistentValues[CAMPAIGN_NAME] = campaign_arn
     write(PersistentValues)
 
 
@@ -157,3 +157,4 @@ if __name__ == "__main__":
     create_email_template()
     create_import_job()
     create_campaign()
+    
