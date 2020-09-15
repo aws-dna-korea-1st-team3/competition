@@ -147,9 +147,11 @@ func preprocessTitleAndTagData() [][]string {
 	titleTagData := titleTagRows[1:]
 
 	visibleAndGenreTitleTagIDMap := make(map[string]bool)
+	tagNamesMappedByTagID := make(map[string]string)
 	for _, tag := range tagData {
 		if tag[2] == "GENRE" && tag[3] == "PUBLIC" {
 			visibleAndGenreTitleTagIDMap[tag[0]] = true
+			tagNamesMappedByTagID[tag[0]] = tag[1]
 		}
 	}
 
@@ -170,7 +172,12 @@ func preprocessTitleAndTagData() [][]string {
 			continue
 		}
 
-		titleData[i] = append(titleRow, strings.Join(tagIds, "|"))
+		tagNames := []string{}
+		for _, tagID := range tagIds {
+			tagNames = append(tagNames, tagNamesMappedByTagID[tagID])
+		}
+
+		titleData[i] = append(titleRow, strings.Join(tagNames, "|"))
 	}
 
 	titleHead = append(titleHead, "TAG")
@@ -218,14 +225,10 @@ func processTitleRead(titleMappedByID map[string][]string) []string {
 		rows[i][3] = titleMappedByID[rows[i][1]][2]
 	}
 
-	rowsDividedByMonth := divideByMonth(rows)
+	os.Mkdir(outputDirectory+"/title-read", 0755)
+	dateTimeConverted := convertDateTimeColumnToUnixEpochTime(rows, []int{2})
 
-	for k, v := range rowsDividedByMonth {
-		os.Mkdir(outputDirectory+"/title-read", 0755)
-		dateTimeConverted := convertDateTimeColumnToUnixEpochTime(v, []int{2})
-
-		writeCsv(append([][]string{getTitleReadHead()}, dateTimeConverted...), outputDirectory+"/title-read/"+"title-read-"+k+".csv")
-	}
+	writeCsv(append([][]string{getTitleReadHead()}, dateTimeConverted...), outputDirectory+"/title-read/"+"title-read.csv")
 
 	userIDs := make([]string, 0, len(dvcIDMap))
 	for _, value := range dvcIDMap {
