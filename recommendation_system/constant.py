@@ -15,18 +15,19 @@ TITLE_READ_DATASET = "title-read-dataset"
 
 ROLE_NAME = "team3-recommendation-system"
 SOLUTION_NAME_SIMS = "manhwakyung-title-recommendation-solution-sims"
-SOLUTION_NAME_HRNN = "manhwakyung-title-recommendation-solution-hrnn"
+SOLUTION_NAME_UP = "manhwakyung-title-recommendation-solution-up"
 SOLUTION_SIMS = "solution_sims"
-SOLUTION_HRNN = "solution_hrnn"
+SOLUTION_UP = "solution_up"
 SOLUTION_VERSION_SIMS = "solution-version-sims"
-SOLUTION_VERSION_HRNN = "solution-version-hrnn"
+SOLUTION_VERSION_UP = "solution-version-up"
+FILTER_UP = "filter-up"
 CAMPAIGN_NAME_SIMS = "manhwakyung-title-recommendation-campaign-sims"
-CAMPAIGN_NAME_HRNN = "manhwakyung-title-recommendation-campaign-hrnn"
+CAMPAIGN_NAME_UP = "manhwakyung-title-recommendation-campaign-up"
 ROLE = "Role"
 POLICY = "Policy"
 DSG = "data-set-group"
 DSG_NAME = 'manhwakyung-title-recommendation'
 CAMPAIGN_SIMS = 'campaign_sims'
-CAMPAIGN_HRNN = 'campaign_hrnn'
+CAMPAIGN_UP = 'campaign_up'
 
 PERSISTENT_VALUE_FILE_PATH = '.persistent_values'

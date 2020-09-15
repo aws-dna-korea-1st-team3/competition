@@ -50,31 +50,37 @@ if __name__ == "__main__":
       userDatasetArn=PersistentValues[USER_DATASET],
       titleReadDatasetArn=PersistentValues[TITLE_READ_DATASET])
 
-    ### sims recipe(작품별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
+    # 이미 본 작품을 배재하고 추천하기 위한 필터 생성(User-Personalization에서 사용)
+    create_filter(PersistentValues[DSG])
+
+    ### sims recipe, user-personalization recipe 병렬로 진행(약 1시간 30분 ~ 2시간)
+    asyncio.run(create_recommendation_data())
+
+    # sims recipe(작품별 추천)
 
     # Persoanlize Solution및 Solution Version 생성
-    create_solution(PersistentValues[DSG])
+    create_sims_solution(PersistentValues[DSG])
 
     # Persoanlize Campaign 생성
-    create_campaign(PersistentValues[SOLUTION_VERSION])
+    create_sims_campaign(PersistentValues[SOLUTION_VERSION])
 
     # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
     # S3 버킷의 data/title/batch-input-sims.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
     # batch의 output은 S3 버킷의 results/by-title-id/batch-input.txt.out 에 저장됨.
-    create_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
+    create_sims_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
 
-    ### hrnn recipe(사용자별 추천) 아래 세 작업 총 합해서 1시간 ~ 1시간 30분 소요
+    # user-personalization recipe(사용자별 추천)
 
     # Persoanlize Solution및 Solution Version 생성
-    create_hrnn_solution(PersistentValues[DSG])
+    create_up_solution(PersistentValues[DSG])
 
     # Persoanlize Campaign 생성
-    create_hrnn_campaign(PersistentValues[SOLUTION_VERSION])
+    create_up_campaign(PersistentValues[SOLUTION_VERSION])
 
     # Batch Inference Job을 생성해서 훈련이 완료된 모델에서 모든 작품에 대한 추천 작품 데이터를 뽑아 S3에 저장
-    # S3 버킷의 data/title/batch-input-hrnn.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
+    # S3 버킷의 data/user/batch-input-up.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
     # batch의 output은 S3 버킷의 results/by-user-id/ 이하에 저장됨.
-    create_hrnn_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
+    create_up_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
 
 
 ```

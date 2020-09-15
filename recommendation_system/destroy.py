@@ -7,7 +7,7 @@ import constant
 import util
 
 from botocore.exceptions import ClientError
-from constant import REGION, BUCKET_NAME, DATA_DIRECTORY, TITLE, USER, TITLE_READ, ROLE_NAME, SOLUTION_NAME_SIMS, SOLUTION_NAME_HRNN, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_HRNN, ROLE, POLICY, DSG, DSG_NAME, TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION_SIMS, SOLUTION_HRNN, CAMPAIGN_SIMS, CAMPAIGN_HRNN
+from constant import REGION, BUCKET_NAME, DATA_DIRECTORY, TITLE, USER, TITLE_READ, ROLE_NAME, SOLUTION_NAME_SIMS, SOLUTION_NAME_UP, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_UP, ROLE, POLICY, DSG, DSG_NAME, TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION_SIMS, SOLUTION_UP, CAMPAIGN_SIMS, CAMPAIGN_UP, FILTER_UP
 from persistent_value import PersistentValues, write 
 
 # aws clients
@@ -28,6 +28,10 @@ def delete_campaign(campaignArn, campaignName):
 
     except:
         logging.info(f"The {campaignName} campaign has been deleted.")
+
+def delete_filter(filter_arn):
+    logging.info("Delete filter: " + ", ".join(filter_arn))
+    personalize.delete_filter(filterArn=filter_arn)
 
 def delete_dataset(arns):
     logging.info("Delete dataset: " + ", ".join(arns))
@@ -80,11 +84,12 @@ def delete_bucket():
 
 if __name__ == "__main__":
     delete_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
-    delete_campaign(PersistentValues[CAMPAIGN_HRNN], "hrnn")
+    delete_campaign(PersistentValues[CAMPAIGN_UP], "up")
 
     personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_SIMS])
-    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_HRNN])
+    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_UP])
 
+    delete_filter(PersistentValues[FILTER_UP])
     delete_dataset([PersistentValues[TITLE_DATASET], PersistentValues[USER_DATASET], PersistentValues[TITLE_READ_DATASET]])
     delete_dataset_group(PersistentValues[DSG])
     delete_schemas([PersistentValues[TITLE], PersistentValues[USER], PersistentValues[TITLE_READ]])
