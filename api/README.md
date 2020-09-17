@@ -15,6 +15,7 @@ s3_bucket = s3.Bucket(self, "s3bucket",
 ### CDK Deploy
 ```
 $ cd api  
+$ python3 -m venv .env
 $ source .env/bin/activate  
 $ npm install -g aws-cdk@1.16.1
 $ pip install -r requirements.txt  
