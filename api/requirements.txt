@@ -1,2 +1,5 @@
 -e .
 pytest
+
+aws-cdk.aws-dynamodb
+aws-cdk.aws-lambda-event-sources
