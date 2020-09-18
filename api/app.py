@@ -9,6 +9,6 @@ REGION = os.getenv('CDK_DEFAULT_REGION', 'ap-northeast-2')
 AWS_ENV = core.Environment(account=ACCOUNT, region=REGION)
 
 app = core.App()
-ApiCdkStack(app, "api-cdk", env=AWS_ENV)
+ApiCdkStack(app, "team3-recommendation-api", env=AWS_ENV)
 
 app.synth()

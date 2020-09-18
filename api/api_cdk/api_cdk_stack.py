@@ -63,9 +63,9 @@ class ApiCdkStack(core.Stack):
             timeout=core.Duration.minutes(1)
         )
 
-        s3_bucket = s3.Bucket(self, "s3bucket",
-            #removal_policy=core.RemovalPolicy.DESTROY,
-            bucket_name="team3-recommendation-system-personalize-data-myeongjae-kim")
+        s3_bucket = s3.Bucket(self, "data",
+          #removal_policy=core.RemovalPolicy.DESTROY
+        )
 
         # https://stackoverflow.com/questions/60087302/how-to-add-resource-policy-to-existing-s3-bucket-with-cdk-in-javascript
         # https://stackoverflow.com/questions/60282173/lookup-s3-bucket-and-add-a-trigger-to-invoke-a-lambda

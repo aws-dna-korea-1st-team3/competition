@@ -3,15 +3,6 @@
 * Lambda
 * DynamoDB
 
-### Prerequisite
-S3 버킷명을 수정해야 합니다.  
-* 파일: api/api_cdk/api_cdk_stack.py
-```
-s3_bucket = s3.Bucket(self, "s3bucket",
-    #removal_policy=core.RemovalPolicy.DESTROY,
-    bucket_name="team3-recommendation-system-personalize-data-xxx")  # S3 Bucket Name 수정 필요
-```
-
 ### CDK Deploy
 ```
 $ cd api  
@@ -32,6 +23,8 @@ Output 결과의 API Gateway Endpoint로 API를 요청하면 됩니다.
 Outputs:
 api-cdk.RecommendSimsByTitleEndpointD666D060 = https://pdeqhprr1h.execute-api.ap-northeast-2.amazonaws.com/v1/
 ```
+
+`team3-recommendation-api무작위문자열`의 버킷이 만들어집니다. Personalize의 batch inference job 결과가 이 버킷에 저장되어야 합니다.
 
 ### CDK Destroy
 ```
