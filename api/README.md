@@ -24,7 +24,7 @@ Outputs:
 api-cdk.RecommendSimsByTitleEndpointD666D060 = https://pdeqhprr1h.execute-api.ap-northeast-2.amazonaws.com/v1/
 ```
 
-`team3-recommendation-api무작위문자열`의 버킷이 만들어집니다. Personalize의 batch inference job 결과가 이 버킷에 저장되어야 합니다.
+`team3-recommendation-api-data무작위문자열`의 버킷이 만들어집니다. Personalize의 batch inference job 결과가 이 버킷에 저장되어야 합니다.
 
 ### CDK Destroy
 ```
