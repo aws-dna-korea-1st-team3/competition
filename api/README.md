@@ -26,6 +26,12 @@ api-cdk.RecommendSimsByTitleEndpointD666D060 = https://pdeqhprr1h.execute-api.ap
 
 `team3-recommendation-api-data무작위문자열`의 버킷이 만들어집니다. Personalize의 batch inference job 결과가 이 버킷에 저장되어야 합니다.
 
+```sh
+# 버킷 이름 확인
+aws s3 ls | grep team3-recommendation-api-data
+```
+
+
 ### CDK Destroy
 ```
 $ cdk destroy
