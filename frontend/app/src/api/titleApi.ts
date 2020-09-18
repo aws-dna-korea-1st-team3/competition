@@ -1,3 +1,5 @@
+import Axios from "axios";
+import { API } from "../../constnats";
 import { Title } from "../types"
 
 // https://stackoverflow.com/a/2450976
@@ -33,10 +35,10 @@ export const titleApi = {
       ? resolve(titlesMappedById[id])
       : reject(Error("non existent title #" + id)), pseudoLatency)
   }),
-  getRecommendationByTitleId: (_titleId: string): Promise<Title[]> => {
-    const titleIds =  cachedRecommendedTitlesIds[_titleId] || shuffle([...titles].map(t => String(t.id))).slice(0, 6)
-    cachedRecommendedTitlesIds[_titleId] = titleIds;
-    return Promise.all(titleIds.map(id => titleApi.findById(id)))
+  getRecommendationByTitleId: (titleId: string): Promise<Title[]> => {
+    return Axios.get<{recomm_item: string}>(`${API}/recommended-titles/by-title/${titleId}`)
+      .then(res => res.data.recomm_item.split(",").map(s => s.trim()).slice(0, 6))
+      .then(titleIds => titleIds.map(titleId => titlesMappedById[titleId]))
   },
   getRecommendationByUsername: (_username: string): Promise<Title[]> => {
     const titleIds =  cachedRecommendedTitlesIds[_username] || shuffle([...titles].map(t => String(t.id))).slice(0, 6)
