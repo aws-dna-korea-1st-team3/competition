@@ -63,9 +63,9 @@ class ApiCdkStack(core.Stack):
             timeout=core.Duration.minutes(1)
         )
 
-        s3_bucket = s3.Bucket(self, "s3bucket",
-            #removal_policy=core.RemovalPolicy.DESTROY,
-            bucket_name="team3-recommendation-system-personalize-data-jhhwang-cdk")
+        s3_bucket = s3.Bucket(self, "data",
+          #removal_policy=core.RemovalPolicy.DESTROY
+        )
 
         # https://stackoverflow.com/questions/60087302/how-to-add-resource-policy-to-existing-s3-bucket-with-cdk-in-javascript
         # https://stackoverflow.com/questions/60282173/lookup-s3-bucket-and-add-a-trigger-to-invoke-a-lambda
@@ -114,7 +114,7 @@ class ApiCdkStack(core.Stack):
             description='Webtoon is recommended based on webtoon id. (Recipe: SIMS)',
             endpoint_types=[apigw.EndpointType.REGIONAL],
             deploy=True,
-            deploy_options=apigw.StageOptions(stage_name="v1")
+            deploy_options=apigw.StageOptions(stage_name="v1"),
         )
     
         recomm_titles = sims_title_api.root.add_resource('recommended-titles')
@@ -122,3 +122,7 @@ class ApiCdkStack(core.Stack):
         by_title.add_method("GET")
         by_title_id= by_title.add_resource('{id}')
         by_title_id.add_method("GET")
+        by_title_id.add_cors_preflight(
+          allow_origins=["*"],
+          allow_methods=["*"]
+        )

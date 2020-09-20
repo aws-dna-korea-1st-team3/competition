@@ -46,6 +46,11 @@ def process_by_title_id(table, event):
         
         response = {
             "statusCode": 200,
+            "headers": {
+              "Access-Control-Allow-Headers" : "*",
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "*"
+            },
             "body": json.dumps(result['Item'], indent=4)
         }
         return response

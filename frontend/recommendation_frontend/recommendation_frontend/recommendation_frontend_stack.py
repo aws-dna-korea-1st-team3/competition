@@ -9,14 +9,15 @@ class RecommendationFrontendStack(core.Stack):
         # The code that defines your stack goes here
         bucket = s3.Bucket(
           self,
-          "manhwakyung-recommendation-frontend",
+          "web",
           removal_policy=core.RemovalPolicy.DESTROY,
           public_read_access=True,
           access_control=s3.BucketAccessControl.PUBLIC_READ,
-          website_index_document="index.html")
+          website_index_document="index.html",
+        )
         
         # 웹사이트 업로드
-        s3deploy.BucketDeployment(self, "manhwakyung-recommendation-frontend-deploy",
+        s3deploy.BucketDeployment(self, "frontend-deploy",
           sources=[s3deploy.Source.asset("../app/out")],
           destination_bucket=bucket,
           destination_key_prefix="/")
