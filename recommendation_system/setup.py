@@ -547,7 +547,7 @@ def create_recommender_configuration():
                                                                    'RecommendationProviderUri': PersistentValues[CAMPAIGN_UP],
                                                                    'RecommendationTransformerUri': FUNCTION_NAME,
                                                                    'RecommendationsPerMessage': 5})
-    model_id = model_response['Id']
+    model_id = model_response['RecommenderConfigurationResponse']['Id']
     PersistentValues[ML_NAME] = model_id
     write(PersistentValues)
 
