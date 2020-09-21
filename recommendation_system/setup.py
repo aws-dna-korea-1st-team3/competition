@@ -99,7 +99,10 @@ def create_s3_role():
     {
       "Effect": "Allow",
       "Principal": {
-        "Service": "personalize.amazonaws.com"
+        "Service": [
+            "personalize.amazonaws.com",
+            "pinpoint.amazonaws.com"
+        ]
       },
       "Action": "sts:AssumeRole"
     }
