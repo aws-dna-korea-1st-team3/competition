@@ -10,7 +10,7 @@ import asyncio
 from botocore.exceptions import ClientError
 from constant import PERSISTENT_VALUE_FILE_PATH, REGION, \
                      BUCKET_NAME, DATA_DIRECTORY, SEGMENT_PATH, LAMBDA_PATH, \
-                     S3_POLICY_NAME, S3_ROLE_NAME, LAMBDA_POLICY_NAME, LAMBDA_ROLE_NAME, ML_POLICY_NAME, ML_ROLE_NAME, \
+                     S3_BUCKET_POLICY_NAME, S3_POLICY_NAME_FOR_ROLE, S3_ROLE_NAME, LAMBDA_POLICY_NAME, LAMBDA_ROLE_NAME, ML_POLICY_NAME, ML_ROLE_NAME, \
                      TITLE, USER, TITLE_READ, TITLE_DATASET, USER_DATASET, TITLE_READ_DATASET, DSG, DSG_NAME, \
                      SOLUTION_NAME_SIMS, SOLUTION_NAME_UP, SOLUTION_SIMS, SOLUTION_UP, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_UP, FILTER_UP, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_UP, CAMPAIGN_SIMS, CAMPAIGN_UP, \
                      FUNCTION_NAME, \
@@ -50,10 +50,10 @@ def add_bucket_policy():
 
     policy = f'''{{
 "Version": "2012-10-17",
-"Id": {S3_POLICY_NAME},
+"Id": "{S3_BUCKET_POLICY_NAME}",
 "Statement": [
     {{
-        "Sid": {S3_POLICY_NAME},
+        "Sid": "{S3_BUCKET_POLICY_NAME}",
         "Effect": "Allow",
         "Principal": {{
             "Service": "personalize.amazonaws.com"
@@ -66,11 +66,11 @@ def add_bucket_policy():
     }}
 ]
 }}'''
+
     bucket_policy = boto3.resource('s3').BucketPolicy(BUCKET_NAME)
     bucket_policy.put(
         ConfirmRemoveSelfBucketAccess=True,
         Policy=policy)
-
 
 def upload_data():
     csv_file_paths = util.get_file_paths_recursively(DATA_DIRECTORY, "csv")
@@ -107,13 +107,13 @@ def create_s3_role():
 }''')['Role']['Arn']
 
     new_policy = iam_client.create_policy(
-        PolicyName=S3_POLICY_NAME,
+        PolicyName=S3_POLICY_NAME_FOR_ROLE,
         PolicyDocument=f'''{{
     "Version": "2012-10-17",
-    "Id": "{S3_POLICY_NAME}",
+    "Id": "{S3_POLICY_NAME_FOR_ROLE}",
     "Statement": [
         {{
-            "Sid": "{S3_POLICY_NAME}",
+            "Sid": "{S3_POLICY_NAME_FOR_ROLE}",
             "Effect": "Allow",
             "Action": "s3:*",
             "Resource": [
@@ -129,7 +129,7 @@ def create_s3_role():
     policy.attach_role(RoleName=S3_ROLE_NAME)
 
     PersistentValues[S3_ROLE_NAME] = role_arn
-    PersistentValues[S3_POLICY_NAME] = new_policy_arn
+    PersistentValues[S3_POLICY_NAME_FOR_ROLE] = new_policy_arn
     write(PersistentValues)
 
 
@@ -477,7 +477,7 @@ def create_ml_role():
             "Effect": "Allow",
             "Action": [
                 "personalize:*"
-            ]  
+            ],
             "Resource": [
                 "{PersistentValues[CAMPAIGN_UP]}",
                 "{PersistentValues[SOLUTION_UP]}"
@@ -502,7 +502,7 @@ def create_function():
                                                  Role=PersistentValues[LAMBDA_ROLE_NAME],
                                                  Handler='lambda_function.lambda_handler',
                                                  Code={
-                                                     'S3Bucket': {BUCKET_NAME},
+                                                     'S3Bucket': BUCKET_NAME,
                                                      'S3Key': LAMBDA_PATH})
     function_arn = function_response['FunctionArn']
     PersistentValues[FUNCTION_NAME] = function_arn
@@ -567,9 +567,10 @@ def create_import_job():
                                                   ImportJobRequest={
                                                       'Format': 'CSV',
                                                       'RoleArn': PersistentValues[S3_ROLE_NAME],
-                                                      'S3Url': f's3://{BUCKET_NAME}{SEGMENT_PATH}',
+                                                      'S3Url': f's3://{BUCKET_NAME}/{SEGMENT_PATH}',
                                                       'SegmentName': SEGEMENT_NAME})
-    segment_id = segment_response['Definition']['SegmentId']
+    print(segment_response['ImportJobResponse']['Definition'])
+    segment_id = segment_response['ImportJobResponse']['Definition']['SegmentId']
     PersistentValues[SEGEMENT_NAME] = segment_id
     write(PersistentValues)
 
@@ -592,50 +593,57 @@ def create_campaign():
 
 if __name__ == "__main__":
 
+    # # create_bucket() # 버킷 생성... 을 하지 않음. api cdk를 셋업하면서 만들어진 버킷을 사용
+    # add_bucket_policy() # 버킷 정책 설정
+    # upload_data() # data 디렉토리의 파일을 S3에 업로드
+
+    # create_s3_role() # Personalize, Pinpoint를 위한 IAM Role 및 Policy 생성
+    # register_schema() # Personalize에 스키마 등록
+    # create_dataset_group() # 훈련에 사용할 데이터셋 그룹 생성
+
+    # # 데이터셋 그룹에 데이터셋 생성
+    # create_dataset(
+    #   datasetGroupArn=PersistentValues[DSG],
+    #   titleSchemaArn=PersistentValues[TITLE],
+    #   userSchemaArn=PersistentValues[USER],
+    #   titleReadSchemaArn=PersistentValues[TITLE_READ])
+
+    # logging.info("Wait 30 seconds for a role to acquire authorities...")
+    # time.sleep(30)
+
+    # # 데이터셋에 해당하는 데이터를 S3에서 불러오기. 30~40분 소요
+    # import_dataset(
+    #   titleDatasetArn=PersistentValues[TITLE_DATASET],
+    #   userDatasetArn=PersistentValues[USER_DATASET],
+    #   titleReadDatasetArn=PersistentValues[TITLE_READ_DATASET])
+
+    # # 이미 본 작품을 배재하고 추천하기 위한 필터 생성(User-Personalization에서 사용)
+    # create_filter(PersistentValues[DSG])
+
+    # # sims recipe, user-personalization recipe 병렬로 진행(약 1시간 30분 ~ 2시간)
+    # asyncio.run(create_recommendation_data())
+
+    # # 유저 기반 추천 예시
+    # userId = 'cce93dce-b13a-4cd3-9380-008d48e6a53c'
+    # response = personalize_runtime.get_recommendations(
+    #     campaignArn=PersistentValues[CAMPAIGN_UP],
+    #     userId='User ID',
+    #     filterArn=PersistentValues[FILTER_UP])
+    # print("Recommended items by user " + userId)
+    # for item in response['itemList']:
+    #     print(item['itemId'])
+
+    # ########################################
+    # # Pinpoint 관련
+    # ########################################
+
     get_accountid() # 사용자 account id를 가져옴
 
-    create_bucket() # 버킷 생성
-    add_bucket_policy() # 버킷 정책 설정
-    upload_data() # data 디렉토리의 파일을 S3에 업로드
+    # create_lambda_role() # lambda를 위한 IAM Role 및 Policy 생성
+    # create_ml_role() # ML(pinpoint)를 위한 IAM Role 및 Policy 생성
 
-    create_s3_role() # Personalize, Pinpoint를 위한 IAM Role 및 Policy 생성
-    register_schema() # Personalize에 스키마 등록
-    create_dataset_group() # 훈련에 사용할 데이터셋 그룹 생성
-
-    # 데이터셋 그룹에 데이터셋 생성
-    create_dataset(
-      datasetGroupArn=PersistentValues[DSG],
-      titleSchemaArn=PersistentValues[TITLE],
-      userSchemaArn=PersistentValues[USER],
-      titleReadSchemaArn=PersistentValues[TITLE_READ])
-
-    # 데이터셋에 해당하는 데이터를 S3에서 불러오기. 30~40분 소요
-    import_dataset(
-      titleDatasetArn=PersistentValues[TITLE_DATASET],
-      userDatasetArn=PersistentValues[USER_DATASET],
-      titleReadDatasetArn=PersistentValues[TITLE_READ_DATASET])
-
-    # 이미 본 작품을 배재하고 추천하기 위한 필터 생성(User-Personalization에서 사용)
-    create_filter(PersistentValues[DSG])
-
-    # sims recipe, user-personalization recipe 병렬로 진행(약 1시간 30분 ~ 2시간)
-    asyncio.run(create_recommendation_data())
-
-    # 유저 기반 추천 예시
-    userId = 'cce93dce-b13a-4cd3-9380-008d48e6a53c'
-    response = personalize_runtime.get_recommendations(
-        campaignArn=PersistentValues[CAMPAIGN_UP],
-        userId='User ID',
-        filterArn=PersistentValues[FILTER_UP])
-    print("Recommended items by user " + userId)
-    for item in response['itemList']:
-        print(item['itemId'])
-
-    create_lambda_role() # lambda를 위한 IAM Role 및 Policy 생성
-    create_ml_role() # ML(pinpoint)를 위한 IAM Role 및 Policy 생성
-
-    create_function() # title id를 title로 변경해줄 lambda 생성
-    add_permission() # lambda에 권한 넣어줌
+    # create_function() # title id를 title로 변경해줄 lambda 생성
+    # add_permission() # lambda에 권한 넣어줌
 
     create_app() # pinpoint application 생성
     update_email_channel() # 이메일 채널 활성화

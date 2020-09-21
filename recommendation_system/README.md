@@ -2,20 +2,34 @@
 
 ## Setup
 
-`~/.aws/config`에 default로 지정되어있는 access_key와 secret_access_key를 사용합니다. 참고: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html
+AWS Python SDK (boto3) 설치 
 
-constant.py의 BUCKET_NAME의 마지막 숫자를 임의의 숫자로 바꿔주세요.
-
-```py3
-# 예)
-BUCKET_NAME = "team3-recommendation-system-personalize-data-348521"
+```sh
+pip install boto3
 ```
 
-ADDRESS를 자신의 메일로 바꿔주세요.(AWS SES에서 인증 필요) 
+`~/.aws/config`에 default로 지정되어있는 access_key와 secret_access_key를 사용합니다. 참고: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html
+
+constant.py의 BUCKET_NAME을 api를 셋업하면서 생성한 BUCKET_NAME으로 교체해주세요.
 
 ```py3
 # 예)
-ADDRESS = "test@test.com"
+BUCKET_NAME = "team3-recommendation-api-data7e2128ca-1gla8bnj0ry2p"
+```
+
+constant.py의 ADDRESS를 자신의 메일로 바꿔주세요.(AWS SES에서 인증 필요) 
+
+```py3
+# 예)
+ADDRESS = "your@email.com"
+```
+
+`data/user/pinpoint_import.csv`의 이메일과 휴대폰 번호도 자신의 것으로 변경해주세요.
+
+```csv
+ChannelType,Address,User.UserId,Id
+EMAIL,your@email.com,007e2923-dc99-440f-b1db-bc97af34a412,endpoint1
+SMS,1012345678,007e2923-dc99-440f-b1db-bc97af34a412,endpoint2
 ```
 
 이후에 boto3를 설치하고 setup.py를 실행합니다.

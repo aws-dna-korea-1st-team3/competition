@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
 PERSISTENT_VALUE_FILE_PATH = '.persistent_values'
-
 REGION='ap-northeast-2'
 
 # S3 관련
-BUCKET_NAME = "team3-recommendation-system-personalize-data-3"
+BUCKET_NAME = "team3-recommendation-api-data7e2128ca-1gla8bnj0ry2p" # api cdk를 셋업하면서 만들어진 BUCKET_NAME으로 교체
 DATA_DIRECTORY = "data"
 SEGMENT_PATH = 'data/user/pinpoint_import.csv'
 LAMBDA_PATH = 'data/lambda.zip'
 
 
 # IAM 관련
-S3_POLICY_NAME = 'competition-s3-policy'
+S3_BUCKET_POLICY_NAME = 'CompetitionS3BucketPolicy'
+S3_POLICY_NAME_FOR_ROLE = 'CompetitionS3PolicyForRole'
 S3_ROLE_NAME = 'competition-s3-role'
 
 LAMBDA_POLICY_NAME = 'competition-lambda-policy'
 LAMBDA_ROLE_NAME = 'competition-lambda-role'
 
-ML_POLICY_NAME = 'competition-ml-policy'
+ML_POLICY_NAME = 'CompetitionMlPolicy'
 ML_ROLE_NAME = 'competition-ml-role'
 
 
@@ -64,7 +64,7 @@ SEGEMENT_NAME = 'competition-segment'
 CAMPAIGN_NAME = 'competition-campaign'
 EMAIL_NAME = 'competition-email'
 
-ADDRESS = 'eunhye.ju@deliveryhero.co.kr'
+ADDRESS = 'dev@myeongjae.kim' # 본인 이메일로 교체
 
 HTML_TEXT = '''
 <!DOCTYPE html>
