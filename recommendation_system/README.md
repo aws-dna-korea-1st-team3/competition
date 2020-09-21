@@ -11,6 +11,13 @@ constant.py의 BUCKET_NAME의 마지막 숫자를 임의의 숫자로 바꿔주�
 BUCKET_NAME = "team3-recommendation-system-personalize-data-348521"
 ```
 
+ADDRESS를 자신의 메일로 바꿔주세요.(AWS SES에서 인증 필요) 
+
+```py3
+# 예)
+ADDRESS = "test@test.com"
+```
+
 이후에 boto3를 설치하고 setup.py를 실행합니다.
 
 ```sh
@@ -32,7 +39,7 @@ if __name__ == "__main__":
     add_bucket_policy() # 버킷 정책 설정
     upload_data() # data 디렉토리의 파일을 S3에 업로드
 
-    create_role() # Personalize를 위한 IAM Role 및 Policy 생성
+    create_s3_role() # Personalize, Pinpoint를 위한 IAM Role 및 Policy 생성
 
     register_schema() # Personalize에 스키마 등록
     create_dataset_group() # 훈련에 사용할 데이터셋 그룹 생성
@@ -81,6 +88,21 @@ if __name__ == "__main__":
     # S3 버킷의 data/user/batch-input-up.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
     # batch의 output은 S3 버킷의 results/by-user-id/ 이하에 저장됨.
     create_up_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION], roleArn=PersistentValues[ROLE])
+
+    create_lambda_role() # lambda를 위한 IAM Role 및 Policy 생성
+    create_ml_role() # ML(pinpoint)를 위한 IAM Role 및 Policy 생성
+
+    create_function() # title id를 title로 변경해줄 lambda 생성
+    add_permission() # lambda에 권한 넣어줌
+
+    create_app() # pinpoint application 생성
+    update_email_channel() # 이메일 채널 활성화
+
+    create_recommender_configuration() # personalize와 연결된 추천 모델 생성 (권한 생성 필요)
+    create_email_template() # 이메일 템플릿 생성
+
+    create_import_job() # segment 생성
+    create_campaign() # cmapaign 생성
 
 
 ```

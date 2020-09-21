@@ -8,9 +8,14 @@ import util
 import asyncio
 
 from botocore.exceptions import ClientError
-from constant import REGION, BUCKET_NAME, DATA_DIRECTORY, TITLE, USER, TITLE_READ, ROLE_NAME, SOLUTION_NAME_SIMS, \
-    SOLUTION_NAME_UP, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_UP, ROLE, POLICY, DSG, DSG_NAME, \
-    TITLE_DATASET, TITLE_READ_DATASET, USER_DATASET, SOLUTION_SIMS, SOLUTION_UP, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_UP, CAMPAIGN_SIMS, CAMPAIGN_UP, FILTER_UP
+from constant import PERSISTENT_VALUE_FILE_PATH, REGION, \
+                     BUCKET_NAME, DATA_DIRECTORY, SEGMENT_PATH, LAMBDA_PATH, \
+                     S3_POLICY_NAME, S3_ROLE_NAME, LAMBDA_POLICY_NAME, LAMBDA_ROLE_NAME, ML_POLICY_NAME, ML_ROLE_NAME, \
+                     TITLE, USER, TITLE_READ, TITLE_DATASET, USER_DATASET, TITLE_READ_DATASET, DSG, DSG_NAME, \
+                     SOLUTION_NAME_SIMS, SOLUTION_NAME_UP, SOLUTION_SIMS, SOLUTION_UP, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_UP, FILTER_UP, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_UP, CAMPAIGN_SIMS, CAMPAIGN_UP, \
+                     FUNCTION_NAME, \
+                     ML_NAME, APPLICATION_NAME, SEGEMENT_NAME, CAMPAIGN_NAME, EMAIL_NAME, ADDRESS, HTML_TEXT
+
 from persistent_value import PersistentValues, write
 
 # aws clients
@@ -20,9 +25,18 @@ personalize_runtime = boto3.client('personalize-runtime', region_name=REGION)
 s3 = boto3.client('s3', region_name=REGION)
 iam_client = boto3.client('iam', region_name=REGION)
 iam_resource = boto3.resource('iam', region_name=REGION)
+pinpoint = boto3.client('pinpoint', region_name=REGION)
+function = boto3.client('lambda')
 
 
 # procedures
+
+def get_accountid():
+    iam = boto3.resource('iam')
+    global ACCOUNT_ID
+    ACCOUNT_ID = iam.CurrentUser().arn.split(':')[4]
+
+
 def create_bucket():
     logging.info('Create bucket. bucket_name: {}, region: {}'.format(BUCKET_NAME, REGION))
 
@@ -36,10 +50,10 @@ def add_bucket_policy():
 
     policy = f'''{{
 "Version": "2012-10-17",
-"Id": "PersonalizeS3BucketAccessPolicy",
+"Id": {S3_POLICY_NAME},
 "Statement": [
     {{
-        "Sid": "PersonalizeS3BucketAccessPolicy",
+        "Sid": {S3_POLICY_NAME},
         "Effect": "Allow",
         "Principal": {{
             "Service": "personalize.amazonaws.com"
@@ -71,12 +85,14 @@ def upload_data():
     up_batch_input_path = "data/user/batch-input-up.txt"
     s3.meta.client.upload_file(up_batch_input_path, BUCKET_NAME, up_batch_input_path)
 
+    s3.meta.client.upload_file(LAMBDA_PATH, BUCKET_NAME, LAMBDA_PATH)
 
-def create_role():
-    logging.info("Creating a role for Personalize. Role name: " + ROLE_NAME)
+
+def create_s3_role():
+    logging.info("Creating a role for Personalize. Role name: " + S3_ROLE_NAME)
 
     role_arn = iam_client.create_role(
-        RoleName=ROLE_NAME,
+        RoleName=S3_ROLE_NAME,
         AssumeRolePolicyDocument='''{
   "Version": "2012-10-17",
   "Statement": [
@@ -88,17 +104,16 @@ def create_role():
       "Action": "sts:AssumeRole"
     }
   ]
-}''')[ROLE]["Arn"]
+}''')['Role']['Arn']
 
-    policy_name = 'Team3RecommendationSystemPersonalizeS3BucketAccessPolicy'
     new_policy = iam_client.create_policy(
-        PolicyName=policy_name,
+        PolicyName=S3_POLICY_NAME,
         PolicyDocument=f'''{{
     "Version": "2012-10-17",
-    "Id": "{policy_name}",
+    "Id": "{S3_POLICY_NAME}",
     "Statement": [
         {{
-            "Sid": "{policy_name}",
+            "Sid": "{S3_POLICY_NAME}",
             "Effect": "Allow",
             "Action": "s3:*",
             "Resource": [
@@ -108,13 +123,13 @@ def create_role():
         }}
     ]
 }}''')
-    new_policy_arn = new_policy["Policy"]["Arn"]
+    new_policy_arn = new_policy['Policy']['Arn']
 
     policy = iam_resource.Policy(new_policy_arn)
-    policy.attach_role(RoleName=ROLE_NAME)
+    policy.attach_role(RoleName=S3_ROLE_NAME)
 
-    PersistentValues[ROLE] = role_arn
-    PersistentValues[POLICY] = new_policy_arn
+    PersistentValues[S3_ROLE_NAME] = role_arn
+    PersistentValues[S3_POLICY_NAME] = new_policy_arn
     write(PersistentValues)
 
 
@@ -185,7 +200,7 @@ def create_dataset(datasetGroupArn, titleSchemaArn, userSchemaArn, titleReadSche
 
 
 def import_dataset(titleDatasetArn, userDatasetArn, titleReadDatasetArn):
-    role_arn = iam_resource.Role(ROLE_NAME).arn
+    role_arn = iam_resource.Role(S3_ROLE_NAME).arn
     DATASET_IMPORT_JOB_ARN = 'datasetImportJobArn'
 
     title_import_job = personalize.create_dataset_import_job(
@@ -364,7 +379,7 @@ async def create_recommendation_data_sims():
     # S3 버킷의 data/title/batch-input-sims.txt 파일에 모든 작품에 대한 id가 있고, 이 파일이 batch의 input으로 들어간다.
     # batch의 output은 S3 버킷의 results/by-title-id/ 이하에 저장됨.
     await create_sims_batch_inference_job(solutionVersionArn=PersistentValues[SOLUTION_VERSION_SIMS],
-                                    roleArn=PersistentValues[ROLE])
+                                          roleArn=PersistentValues[S3_ROLE_NAME])
 
 
 async def create_recommendation_data_up():
@@ -382,13 +397,208 @@ async def create_recommendation_data():
           asyncio.create_task(create_recommendation_data_sims()),
           asyncio.create_task(create_recommendation_data_up()))
 
+
+def create_lambda_role():
+    logging.info("Creating a role for Lambda. Role name: " + LAMBDA_ROLE_NAME)
+
+    role_arn = iam_client.create_role(
+        RoleName=LAMBDA_ROLE_NAME,
+        AssumeRolePolicyDocument='''{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}''')['Role']['Arn']
+
+    new_policy = iam_client.create_policy(
+        PolicyName=LAMBDA_POLICY_NAME,
+        PolicyDocument=f'''{{
+    "Version": "2012-10-17",
+    "Id": "{LAMBDA_POLICY_NAME}",
+    "Statement": [
+        {{
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:{REGION}:{ACCOUNT_ID}:*"
+        }},
+        {{
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:{REGION}:{ACCOUNT_ID}:log-group:/aws/lambda/{FUNCTION_NAME}:*"
+            ]
+        }}
+    ]
+}}''')
+    new_policy_arn = new_policy['Policy']['Arn']
+
+    policy = iam_resource.Policy(new_policy_arn)
+    policy.attach_role(RoleName=LAMBDA_ROLE_NAME)
+
+    PersistentValues[LAMBDA_ROLE_NAME] = role_arn
+    PersistentValues[LAMBDA_POLICY_NAME] = new_policy_arn
+    write(PersistentValues)
+
+
+def create_ml_role():
+    logging.info("Creating a role for Lambda. Role name: " + ML_ROLE_NAME)
+
+    role_arn = iam_client.create_role(
+        RoleName=ML_ROLE_NAME,
+        AssumeRolePolicyDocument='''{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "pinpoint.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}''')['Role']['Arn']
+
+    new_policy = iam_client.create_policy(
+        PolicyName=ML_POLICY_NAME,
+        PolicyDocument=f'''{{
+    "Version": "2012-10-17",
+    "Id": "{ML_POLICY_NAME}",
+    "Statement": [
+        {{
+            "Effect": "Allow",
+            "Action": [
+                "personalize:*"
+            ]  
+            "Resource": [
+                "{PersistentValues[CAMPAIGN_UP]}",
+                "{PersistentValues[SOLUTION_UP]}"
+            ]
+        }}
+    ]
+}}''')
+    new_policy_arn = new_policy['Policy']['Arn']
+
+    policy = iam_resource.Policy(new_policy_arn)
+    policy.attach_role(RoleName=ML_ROLE_NAME)
+
+    PersistentValues[ML_ROLE_NAME] = role_arn
+    PersistentValues[ML_POLICY_NAME] = new_policy_arn
+    write(PersistentValues)
+
+
+def create_function():
+    logging.info('Create Lambda. Function name : {}'.format(FUNCTION_NAME))
+    function_response = function.create_function(FunctionName=FUNCTION_NAME,
+                                                 Runtime='python3.8',
+                                                 Role=PersistentValues[LAMBDA_ROLE_NAME],
+                                                 Handler='lambda_function.lambda_handler',
+                                                 Code={
+                                                     'S3Bucket': {BUCKET_NAME},
+                                                     'S3Key': LAMBDA_PATH})
+    function_arn = function_response['FunctionArn']
+    PersistentValues[FUNCTION_NAME] = function_arn
+    write(PersistentValues)
+
+
+def add_permission():
+    logging.info('Add lambda policy for AWS Pinpoint. Function name : {}'.format(FUNCTION_NAME))
+    function.add_permission(FunctionName=FUNCTION_NAME,
+                            StatementId='sid',
+                            Action='lambda:InvokeFunction',
+                            Principal=f'pinpoint.{REGION}.amazonaws.com',
+                            SourceArn=f'arn:aws:mobiletargeting:{REGION}:{ACCOUNT_ID}:recommenders/*')
+
+
+def create_app():
+    logging.info('Create Pinpoint. Application name : {}, region: {}'.format(APPLICATION_NAME, REGION))
+    app_response = pinpoint.create_app(CreateApplicationRequest={
+        'Name': APPLICATION_NAME})
+    app_id = app_response['ApplicationResponse']['Id']
+    PersistentValues[APPLICATION_NAME] = app_id
+    write(PersistentValues)
+
+
+def update_email_channel():
+    logging.info('Enable Email Channel. Application name : {}'.format(APPLICATION_NAME))
+    pinpoint.update_email_channel(ApplicationId=PersistentValues[APPLICATION_NAME],
+                                  EmailChannelRequest={
+                                      'Enabled': True,
+                                      'Identity': f'arn:aws:ses:{REGION}:{ACCOUNT_ID}:identity/{ADDRESS}',
+                                      'FromAddress': ADDRESS})
+
+
+def create_recommender_configuration():
+    logging.info('Create ML Model. Recommender name : {}'.format(ML_NAME))
+    model_response = pinpoint.create_recommender_configuration(CreateRecommenderConfiguration={
+                                                                   'Attributes': {
+                                                                       'Recommendations.Title': 'Title'},
+                                                                   'Name': ML_NAME,
+                                                                   'RecommendationProviderIdType': 'PINPOINT_USER_ID',
+                                                                   'RecommendationProviderRoleArn': PersistentValues[ML_ROLE_NAME],
+                                                                   'RecommendationProviderUri': PersistentValues[CAMPAIGN_UP],
+                                                                   'RecommendationTransformerUri': FUNCTION_NAME,
+                                                                   'RecommendationsPerMessage': 5})
+    model_id = model_response['RecommenderConfigurationResponse']['Id']
+    PersistentValues[ML_NAME] = model_id
+    write(PersistentValues)
+
+
+def create_email_template():
+    logging.info('Create Email Template. Template name : {}'.format(EMAIL_NAME))
+    pinpoint.create_email_template(TemplateName=EMAIL_NAME,
+                                   EmailTemplateRequest={
+                                       'HtmlPart': HTML_TEXT,
+                                       'RecommenderId': PersistentValues[ML_NAME],
+                                       'Subject': EMAIL_NAME})
+
+
+def create_import_job():
+    logging.info('Create Segment. Segment name : {}'.format(SEGEMENT_NAME))
+    segment_response = pinpoint.create_import_job(ApplicationId=PersistentValues[APPLICATION_NAME],
+                                                  ImportJobRequest={
+                                                      'Format': 'CSV',
+                                                      'RoleArn': PersistentValues[S3_ROLE_NAME],
+                                                      'S3Url': f's3://{BUCKET_NAME}{SEGMENT_PATH}',
+                                                      'SegmentName': SEGEMENT_NAME})
+    segment_id = segment_response['Definition']['SegmentId']
+    PersistentValues[SEGEMENT_NAME] = segment_id
+    write(PersistentValues)
+
+
+def create_campaign():
+    logging.info('Create Campaign. Campaign name : {}'.format(CAMPAIGN_NAME))
+    campaign_response = pinpoint.create_campaign(ApplicationId=PersistentValues[APPLICATION_NAME],
+                                                 WriteCampaignRequest={
+                                                     'Name': CAMPAIGN_NAME,
+                                                     'SegmentId': PersistentValues[SEGEMENT_NAME],
+                                                     'TemplateConfiguration': {
+                                                         'EmailTemplate': {
+                                                             'Name': EMAIL_NAME}},
+                                                     'Schedule': {
+                                                         'StartTime': 'IMMEDIATE'}})
+    campaign_id = campaign_response['campaignArn']
+    PersistentValues[CAMPAIGN_NAME] = campaign_id
+    write(PersistentValues)
+
+
 if __name__ == "__main__":
+
+    get_accountid() # 사용자 account id를 가져옴
 
     create_bucket() # 버킷 생성
     add_bucket_policy() # 버킷 정책 설정
     upload_data() # data 디렉토리의 파일을 S3에 업로드
 
-    create_role() # Personalize를 위한 IAM Role 및 Policy 생성
+    create_s3_role() # Personalize, Pinpoint를 위한 IAM Role 및 Policy 생성
     register_schema() # Personalize에 스키마 등록
     create_dataset_group() # 훈련에 사용할 데이터셋 그룹 생성
 
@@ -420,3 +630,18 @@ if __name__ == "__main__":
     print("Recommended items by user " + userId)
     for item in response['itemList']:
         print(item['itemId'])
+
+    create_lambda_role() # lambda를 위한 IAM Role 및 Policy 생성
+    create_ml_role() # ML(pinpoint)를 위한 IAM Role 및 Policy 생성
+
+    create_function() # title id를 title로 변경해줄 lambda 생성
+    add_permission() # lambda에 권한 넣어줌
+
+    create_app() # pinpoint application 생성
+    update_email_channel() # 이메일 채널 활성화
+
+    create_recommender_configuration() # personalize와 연결된 추천 모델 생성 (권한 생성 필요)
+    create_email_template() # 이메일 템플릿 생성
+
+    create_import_job() # segment 생성
+    create_campaign() # cmapaign 생성

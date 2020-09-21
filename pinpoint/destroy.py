@@ -24,16 +24,16 @@ def delete_campaign():
                              CampaignId=PersistentValues[CAMPAIGN_NAME])
     logger.info('Deleting Campaign({}) >> Success'.format(CAMPAIGN_NAME))
 
-def delete_email_template():
-
-    pinpoint.delete_email_template(TemplateName=APPLICATION_NAME)
-    logger.info('Deleting Email Template({}) >> Success'.format(EMAIL_NAME))
-
 def delete_segment():
 
     pinpoint.delete_segment(ApplicationId=APPLICATION_NAME,
                             SegmentId=PersistentValues[SEGEMENT_NAME])
     logger.info('Deleting Segment({}) >> Success'.format(SEGEMENT_NAME))
+
+def delete_email_template():
+
+    pinpoint.delete_email_template(TemplateName=APPLICATION_NAME)
+    logger.info('Deleting Email Template({}) >> Success'.format(EMAIL_NAME))
 
 def delete_app():
 
