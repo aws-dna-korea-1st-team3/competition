@@ -651,7 +651,7 @@ if __name__ == "__main__":
     create_app() # pinpoint application 생성
     update_email_channel() # 이메일 채널 활성화
 
-    create_recommender_configuration() # personalize와 연결된 추천 모델 생성 (권한 생성 필요)
+    create_recommender_configuration() # personalize와 연결된 추천 모델 생성
     create_email_template() # 이메일 템플릿 생성
 
     create_import_job() # segment 생성
