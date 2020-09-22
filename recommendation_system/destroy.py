@@ -9,7 +9,7 @@ import util
 from botocore.exceptions import ClientError
 from constant import PERSISTENT_VALUE_FILE_PATH, REGION, \
                      BUCKET_NAME, DATA_DIRECTORY, SEGMENT_PATH, LAMBDA_PATH, \
-                     S3_POLICY_NAME, S3_ROLE_NAME, LAMBDA_POLICY_NAME, LAMBDA_ROLE_NAME, ML_POLICY_NAME, ML_ROLE_NAME, \
+                     S3_BUCKET_POLICY_NAME, S3_POLICY_NAME_FOR_ROLE, S3_ROLE_NAME, LAMBDA_POLICY_NAME, LAMBDA_ROLE_NAME, ML_POLICY_NAME, ML_ROLE_NAME, \
                      TITLE, USER, TITLE_READ, TITLE_DATASET, USER_DATASET, TITLE_READ_DATASET, DSG, DSG_NAME, \
                      SOLUTION_NAME_SIMS, SOLUTION_NAME_UP, SOLUTION_SIMS, SOLUTION_UP, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_UP, FILTER_UP, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_UP, CAMPAIGN_SIMS, CAMPAIGN_UP, \
                      FUNCTION_NAME, \
@@ -26,7 +26,7 @@ iam_resource = boto3.resource('iam', region_name=REGION)
 pinpoint = boto3.client('pinpoint', region_name=REGION)
 function = boto3.client('lambda')
 
-def delete_campaign(campaignArn, campaignName):
+def delete_personalize_campaign(campaignArn, campaignName):
     try:
       personalize.delete_campaign(campaignArn=campaignArn)
       util.wait_until_status(
@@ -67,18 +67,18 @@ def delete_schemas(arns):
     for arn in arns:
         personalize.delete_schema(schemaArn=arn)
   
-def delete_role_and_policy(roleName, policyArn, roleArn):
+def delete_role_and_policy(roleName, policyArn):
     logging.info("Delete role. Role name: " + roleName)
     iam_client.detach_role_policy(
-        RoleName=roleArn,
+        RoleName=roleName,
         PolicyArn=policyArn
     )
 
-    iam_client.delete_role(RoleName=roleArn)
+    iam_client.delete_role(RoleName=roleName)
     iam_client.delete_policy(PolicyArn=policyArn)
 
-def delete_bucket():
-    logging.info(f'Destory S3 Bucket: {BUCKET_NAME}')
+def make_bucket_empty():
+    logging.info(f'Emptying S3 Bucket: {BUCKET_NAME}')
 
     bucket = boto3.resource('s3', region_name=REGION).Bucket(BUCKET_NAME)
 
@@ -88,10 +88,8 @@ def delete_bucket():
       'Objects': list(map(lambda c: {'Key': c['Key']}, response["Contents"]))
     })
 
-    s3.delete_bucket(Bucket=BUCKET_NAME)
 
-
-def delete_campaign():
+def delete_pinpoint_campaign():
     logging.info('Delete Campaign. Campaign name : {}'.format(CAMPAIGN_NAME))
     pinpoint.delete_campaign(ApplicationId=APPLICATION_NAME,
                              CampaignId=PersistentValues[CAMPAIGN_NAME])
@@ -120,8 +118,8 @@ def delete_function():
 
 if __name__ == "__main__":
     # personalize 관련 리소스 삭제
-    delete_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
-    delete_campaign(PersistentValues[CAMPAIGN_UP], "up")
+    delete_personalize_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
+    delete_personalize_campaign(PersistentValues[CAMPAIGN_UP], "up")
     personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_SIMS])
     personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_UP])
     delete_filter(PersistentValues[FILTER_UP])
@@ -129,11 +127,14 @@ if __name__ == "__main__":
     delete_dataset_group(PersistentValues[DSG])
     delete_schemas([PersistentValues[TITLE], PersistentValues[USER], PersistentValues[TITLE_READ]])
 
-    # s3 bucket 삭제
-    delete_bucket()
+    # s3 bucket 비우기. 버킷 삭제는 api를 제거면서.
+    make_bucket_empty()
+
+    # Personalize 관련 iam(role, policy) 삭제
+    delete_role_and_policy(S3_ROLE_NAME, PersistentValues[S3_POLICY_NAME_FOR_ROLE])
 
     # pinpoint 관련 리소스 삭제
-    delete_campaign()
+    delete_pinpoint_campaign()
     delete_segment()
     delete_email_template()
     delete_recommender_configuration()
@@ -142,7 +143,6 @@ if __name__ == "__main__":
     # lambda 삭제
     delete_function()
 
-    # iam(role, policy) 삭제
-    delete_role_and_policy(S3_ROLE_NAME, PersistentValues[S3_POLICY_NAME], PersistentValues[S3_ROLE_NAME])
-    delete_role_and_policy(LAMBDA_ROLE_NAME, PersistentValues[LAMBDA_POLICY_NAME], PersistentValues[LAMBDA_ROLE_NAME])
-    delete_role_and_policy(ML_ROLE_NAME, PersistentValues[ML_POLICY_NAME], PersistentValues[ML_ROLE_NAME])
+    # pinpoint 관련 iam(role, policy) 삭제
+    delete_role_and_policy(LAMBDA_ROLE_NAME, PersistentValues[LAMBDA_POLICY_NAME])
+    delete_role_and_policy(ML_ROLE_NAME, PersistentValues[ML_POLICY_NAME])
