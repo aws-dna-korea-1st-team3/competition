@@ -9,7 +9,7 @@ import util
 from botocore.exceptions import ClientError
 from constant import PERSISTENT_VALUE_FILE_PATH, REGION, \
                      BUCKET_NAME, DATA_DIRECTORY, SEGMENT_PATH, LAMBDA_PATH, \
-                     S3_BUCKET_POLICY_NAME, S3_POLICY_NAME_FOR_ROLE, S3_ROLE_NAME, LAMBDA_POLICY_NAME, LAMBDA_ROLE_NAME, ML_POLICY_NAME, ML_ROLE_NAME, \
+                     S3_BUCKET_POLICY_NAME_FOR_PERSONALIZE, S3_POLICY_NAME_FOR_ROLE_FOR_PERSONALIZE, S3_ROLE_NAME_FOR_PERSONALIZE,S3_BUCKET_POLICY_NAME_FOR_PINPOINT, S3_POLICY_NAME_FOR_ROLE_FOR_PINPOINT, S3_ROLE_NAME_FOR_PINPOINT, LAMBDA_POLICY_NAME, LAMBDA_ROLE_NAME, ML_POLICY_NAME, ML_ROLE_NAME, \
                      TITLE, USER, TITLE_READ, TITLE_DATASET, USER_DATASET, TITLE_READ_DATASET, DSG, DSG_NAME, \
                      SOLUTION_NAME_SIMS, SOLUTION_NAME_UP, SOLUTION_SIMS, SOLUTION_UP, SOLUTION_VERSION_SIMS, SOLUTION_VERSION_UP, FILTER_UP, CAMPAIGN_NAME_SIMS, CAMPAIGN_NAME_UP, CAMPAIGN_SIMS, CAMPAIGN_UP, \
                      FUNCTION_NAME, \
@@ -91,17 +91,17 @@ def make_bucket_empty():
 
 def delete_pinpoint_campaign():
     logging.info('Delete Campaign. Campaign name : {}'.format(CAMPAIGN_NAME))
-    pinpoint.delete_campaign(ApplicationId=APPLICATION_NAME,
+    pinpoint.delete_campaign(ApplicationId=PersistentValues[APPLICATION_NAME],
                              CampaignId=PersistentValues[CAMPAIGN_NAME])
 
 def delete_segment():
     logging.info('Delete Segment. Segment name : {}'.format(SEGEMENT_NAME))
-    pinpoint.delete_segment(ApplicationId=APPLICATION_NAME,
+    pinpoint.delete_segment(ApplicationId=PersistentValues[APPLICATION_NAME],
                             SegmentId=PersistentValues[SEGEMENT_NAME])
 
 def delete_email_template():
     logging.info('Delete Email Template. Template name : {}'.format(EMAIL_NAME))
-    pinpoint.delete_email_template(TemplateName=APPLICATION_NAME)
+    pinpoint.delete_email_template(TemplateName=EMAIL_NAME)
 
 def delete_recommender_configuration():
     logging.info('Delete ML Model. Model name : {}'.format(ML_NAME))
@@ -109,7 +109,7 @@ def delete_recommender_configuration():
 
 def delete_app():
     logging.info('Delete Pinpoint App. App name : {}'.format(APPLICATION_NAME))
-    pinpoint.delete_app(ApplicationId=APPLICATION_NAME)
+    pinpoint.delete_app(ApplicationId=PersistentValues[APPLICATION_NAME])
 
 def delete_function():
     logging.info('Delete Function. Function name : {}'.format(FUNCTION_NAME))
@@ -117,32 +117,42 @@ def delete_function():
 
 
 if __name__ == "__main__":
-    # personalize 관련 리소스 삭제
-    delete_personalize_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
-    delete_personalize_campaign(PersistentValues[CAMPAIGN_UP], "up")
-    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_SIMS])
-    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_UP])
-    delete_filter(PersistentValues[FILTER_UP])
-    delete_dataset([PersistentValues[TITLE_DATASET], PersistentValues[USER_DATASET], PersistentValues[TITLE_READ_DATASET]])
-    delete_dataset_group(PersistentValues[DSG])
-    delete_schemas([PersistentValues[TITLE], PersistentValues[USER], PersistentValues[TITLE_READ]])
 
-    # s3 bucket 비우기. 버킷 삭제는 api를 제거면서.
-    make_bucket_empty()
+    # ########################################
+    # # pinpoint
+    # ########################################
+
+    # # pinpoint 관련 리소스 삭제
+    # delete_pinpoint_campaign()
+    # delete_segment()
+    # delete_email_template()
+    # delete_recommender_configuration()
+    # delete_app()
+
+    # # lambda 삭제
+    # delete_function()
+
+    # # pinpoint 관련 iam(role, policy) 삭제
+    # delete_role_and_policy(LAMBDA_ROLE_NAME, PersistentValues[LAMBDA_POLICY_NAME])
+    # delete_role_and_policy(ML_ROLE_NAME, PersistentValues[ML_POLICY_NAME])
+
+    # ########################################
+    # # personalize
+    # ########################################
+
+    # # personalize 관련 리소스 삭제
+    # delete_personalize_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
+    # delete_personalize_campaign(PersistentValues[CAMPAIGN_UP], "up")
+    # personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_SIMS])
+    # personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_UP])
+    # delete_filter(PersistentValues[FILTER_UP])
+    # delete_dataset([PersistentValues[TITLE_DATASET], PersistentValues[USER_DATASET], PersistentValues[TITLE_READ_DATASET]])
+    # delete_dataset_group(PersistentValues[DSG])
+    # delete_schemas([PersistentValues[TITLE], PersistentValues[USER], PersistentValues[TITLE_READ]])
+
+    # # s3 bucket 비우기. 버킷 삭제는 api를 제거면서.
+    # make_bucket_empty()
 
     # Personalize 관련 iam(role, policy) 삭제
-    delete_role_and_policy(S3_ROLE_NAME, PersistentValues[S3_POLICY_NAME_FOR_ROLE])
-
-    # pinpoint 관련 리소스 삭제
-    delete_pinpoint_campaign()
-    delete_segment()
-    delete_email_template()
-    delete_recommender_configuration()
-    delete_app()
-
-    # lambda 삭제
-    delete_function()
-
-    # pinpoint 관련 iam(role, policy) 삭제
-    delete_role_and_policy(LAMBDA_ROLE_NAME, PersistentValues[LAMBDA_POLICY_NAME])
-    delete_role_and_policy(ML_ROLE_NAME, PersistentValues[ML_POLICY_NAME])
+    delete_role_and_policy(S3_ROLE_NAME_FOR_PERSONALIZE, PersistentValues[S3_POLICY_NAME_FOR_ROLE_FOR_PERSONALIZE])
+    delete_role_and_policy(S3_ROLE_NAME_FOR_PINPOINT, PersistentValues[S3_POLICY_NAME_FOR_ROLE_FOR_PINPOINT])

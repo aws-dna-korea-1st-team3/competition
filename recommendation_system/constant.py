@@ -12,7 +12,7 @@ LAMBDA_PATH = 'data/lambda.zip'
 # IAM 관련
 S3_BUCKET_POLICY_NAME_FOR_PERSONALIZE = 'CompetitionS3BucketPolicyForPersonalize'
 S3_POLICY_NAME_FOR_ROLE_FOR_PERSONALIZE = 'CompetitionS3PolicyForRoleForPersonalize'
-S3_ROLE_NAME_FOR_PERSONALIZE = 'competition-s3-role-for-personalize'
+S3_ROLE_NAME_FOR_PERSONALIZE = 'competition-s3-role-personalize'
 
 S3_BUCKET_POLICY_NAME_FOR_PINPOINT = 'CompetitionS3BucketPolicyForPinpoint'
 S3_POLICY_NAME_FOR_ROLE_FOR_PINPOINT = 'CompetitionS3PolicyForRoleForPinpoint'
