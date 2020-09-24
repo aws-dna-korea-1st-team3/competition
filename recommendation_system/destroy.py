@@ -118,40 +118,40 @@ def delete_function():
 
 if __name__ == "__main__":
 
-    # ########################################
-    # # pinpoint
-    # ########################################
+    ########################################
+    # pinpoint
+    ########################################
 
-    # # pinpoint 관련 리소스 삭제
-    # delete_pinpoint_campaign()
-    # delete_segment()
-    # delete_email_template()
-    # delete_recommender_configuration()
-    # delete_app()
+    # pinpoint 관련 리소스 삭제
+    delete_pinpoint_campaign()
+    delete_segment()
+    delete_email_template()
+    delete_recommender_configuration()
+    delete_app()
 
-    # # lambda 삭제
-    # delete_function()
+    # lambda 삭제
+    delete_function()
 
-    # # pinpoint 관련 iam(role, policy) 삭제
-    # delete_role_and_policy(LAMBDA_ROLE_NAME, PersistentValues[LAMBDA_POLICY_NAME])
-    # delete_role_and_policy(ML_ROLE_NAME, PersistentValues[ML_POLICY_NAME])
+    # pinpoint 관련 iam(role, policy) 삭제
+    delete_role_and_policy(LAMBDA_ROLE_NAME, PersistentValues[LAMBDA_POLICY_NAME])
+    delete_role_and_policy(ML_ROLE_NAME, PersistentValues[ML_POLICY_NAME])
 
-    # ########################################
-    # # personalize
-    # ########################################
+    ########################################
+    # personalize
+    ########################################
 
-    # # personalize 관련 리소스 삭제
-    # delete_personalize_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
-    # delete_personalize_campaign(PersistentValues[CAMPAIGN_UP], "up")
-    # personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_SIMS])
-    # personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_UP])
-    # delete_filter(PersistentValues[FILTER_UP])
-    # delete_dataset([PersistentValues[TITLE_DATASET], PersistentValues[USER_DATASET], PersistentValues[TITLE_READ_DATASET]])
-    # delete_dataset_group(PersistentValues[DSG])
-    # delete_schemas([PersistentValues[TITLE], PersistentValues[USER], PersistentValues[TITLE_READ]])
+    # personalize 관련 리소스 삭제
+    delete_personalize_campaign(PersistentValues[CAMPAIGN_SIMS], "sims")
+    delete_personalize_campaign(PersistentValues[CAMPAIGN_UP], "up")
+    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_SIMS])
+    personalize.delete_solution(solutionArn=PersistentValues[SOLUTION_UP])
+    delete_filter(PersistentValues[FILTER_UP])
+    delete_dataset([PersistentValues[TITLE_DATASET], PersistentValues[USER_DATASET], PersistentValues[TITLE_READ_DATASET]])
+    delete_dataset_group(PersistentValues[DSG])
+    delete_schemas([PersistentValues[TITLE], PersistentValues[USER], PersistentValues[TITLE_READ]])
 
-    # # s3 bucket 비우기. 버킷 삭제는 api를 제거면서.
-    # make_bucket_empty()
+    # s3 bucket 비우기. 버킷 삭제는 api를 제거면서.
+    make_bucket_empty()
 
     # Personalize 관련 iam(role, policy) 삭제
     delete_role_and_policy(S3_ROLE_NAME_FOR_PERSONALIZE, PersistentValues[S3_POLICY_NAME_FOR_ROLE_FOR_PERSONALIZE])

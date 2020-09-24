@@ -7,7 +7,7 @@
 ```
 $ cd api  
 $ python3 -m venv .env
-$ source .env/bin/activate  
+$ source .env/bin/activate
 $ npm install -g aws-cdk@1.16.1
 $ pip install -r requirements.txt  
 $ cdk synthesize  
