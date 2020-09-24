@@ -602,7 +602,7 @@ def create_email_template():
                                    EmailTemplateRequest={
                                        'HtmlPart': HTML_TEXT,
                                        'RecommenderId': PersistentValues[ML_NAME],
-                                       'Subject': EMAIL_NAME})
+                                       'Subject': '만화경 작품 추천'})
 
 
 def create_import_job():
