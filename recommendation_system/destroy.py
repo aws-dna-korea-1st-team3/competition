@@ -135,6 +135,7 @@ if __name__ == "__main__":
     # pinpoint 관련 iam(role, policy) 삭제
     delete_role_and_policy(LAMBDA_ROLE_NAME, PersistentValues[LAMBDA_POLICY_NAME])
     delete_role_and_policy(ML_ROLE_NAME, PersistentValues[ML_POLICY_NAME])
+    delete_role_and_policy(S3_ROLE_NAME_FOR_PINPOINT, PersistentValues[S3_POLICY_NAME_FOR_ROLE_FOR_PINPOINT])
 
     ########################################
     # personalize
@@ -155,4 +156,3 @@ if __name__ == "__main__":
 
     # Personalize 관련 iam(role, policy) 삭제
     delete_role_and_policy(S3_ROLE_NAME_FOR_PERSONALIZE, PersistentValues[S3_POLICY_NAME_FOR_ROLE_FOR_PERSONALIZE])
-    delete_role_and_policy(S3_ROLE_NAME_FOR_PINPOINT, PersistentValues[S3_POLICY_NAME_FOR_ROLE_FOR_PINPOINT])

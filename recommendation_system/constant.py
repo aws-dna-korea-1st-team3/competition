@@ -4,7 +4,7 @@ PERSISTENT_VALUE_FILE_PATH = '.persistent_values'
 REGION='ap-northeast-2'
 
 # S3 관련
-BUCKET_NAME = "team3-recommendation-api-data7e2128ca-1gla8bnj0ry2p" # api cdk를 셋업하면서 만들어진 BUCKET_NAME으로 교체
+BUCKET_NAME = "team3-recommendation-api-data7e2128ca-lno2ez2yd1i9" # api cdk를 셋업하면서 만들어진 BUCKET_NAME으로 교체
 DATA_DIRECTORY = "data"
 SEGMENT_PATH = 'data/user/pinpoint'
 LAMBDA_PATH = 'data/lambda.zip'

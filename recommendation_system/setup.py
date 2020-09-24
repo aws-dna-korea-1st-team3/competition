@@ -638,7 +638,6 @@ def create_campaign():
 
 if __name__ == "__main__":
 
-    create_bucket() # 버킷 생성... 을 하지 않음. api cdk를 셋업하면서 만들어진 버킷을 사용
     add_bucket_policy() # 버킷 정책 설정
     upload_data() # data 디렉토리의 파일을 S3에 업로드
 

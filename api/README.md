@@ -8,7 +8,7 @@
 $ cd api  
 $ python3 -m venv .env
 $ source .env/bin/activate
-$ npm install -g aws-cdk@1.16.1
+$ npm install -g aws-cdk
 $ pip install -r requirements.txt  
 $ cdk synthesize  
 $ cdk bootstrap  
