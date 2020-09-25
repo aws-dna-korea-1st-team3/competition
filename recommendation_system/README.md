@@ -17,19 +17,19 @@ constant.py의 BUCKET_NAME을 api를 셋업하면서 생성한 BUCKET_NAME으로
 BUCKET_NAME = "team3-recommendation-api-data7e2128ca-1gla8bnj0ry2p"
 ```
 
-constant.py의 ADDRESS를 자신의 메일로 바꿔주세요.(AWS SES에서 인증 필요) 
+constant.py의 ADDRESS를 자신의 메일로 바꿔주세요.(AWS SES에서 사전 인증 필요) 
 
 ```py3
 # 예)
 ADDRESS = "your@email.com"
 ```
 
-`data/user/pinpoint/segment_import.csv`의 이메일과 휴대폰 번호도 자신의 것으로 변경해주세요.
+`data/user/pinpoint/segment_import.csv`의 이메일을 자신의 것으로 변경해주세요.
+(Pinpoint Sandbox 환경에서는 메일 발송의 제한이 있을 수 있습니다.)
 
 ```csv
-ChannelType,Address,User.UserId,Id
-EMAIL,your@email.com,007e2923-dc99-440f-b1db-bc97af34a412,endpoint1
-SMS,1012345678,007e2923-dc99-440f-b1db-bc97af34a412,endpoint2
+ChannelType,Address,User.UserId
+EMAIL,your@email.com,007e2923-dc99-440f-b1db-bc97af34a412
 ```
 
 setup.py를 실행합니다. 버킷 생성부터 추천 데이터 추출까지 자동으로 진행합니다.
