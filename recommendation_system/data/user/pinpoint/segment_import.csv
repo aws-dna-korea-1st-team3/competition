@@ -1,3 +1,2 @@
-ChannelType,Address,User.UserId,Id
-EMAIL,dev@myeongjae.kim,007e2923-dc99-440f-b1db-bc97af34a412,endpoint1
-SMS,1088684554,007e2923-dc99-440f-b1db-bc97af34a412,endpoint2
+ChannelType,Address,User.UserId
+EMAIL,dev@myeongjae.kim,007e2923-dc99-440f-b1db-bc97af34a412
