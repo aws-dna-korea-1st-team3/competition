@@ -24,8 +24,7 @@ constant.py의 ADDRESS를 자신의 메일로 바꿔주세요.(AWS SES에서 사
 ADDRESS = "your@email.com"
 ```
 
-`data/user/pinpoint/segment_import.csv`의 이메일을 자신의 것으로 변경해주세요.
-(Pinpoint Sandbox 환경에서는 메일 발송의 제한이 있을 수 있습니다.)
+`data/user/pinpoint/segment_import.csv`의 이메일을 자신의 것으로 변경해주세요. (Pinpoint Sandbox 환경에서는 메일 발송의 제한이 있을 수 있음)
 
 ```csv
 ChannelType,Address,User.UserId
