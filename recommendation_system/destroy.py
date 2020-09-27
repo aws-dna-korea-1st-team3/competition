@@ -38,8 +38,10 @@ def delete_personalize_campaign(campaignArn, campaignName):
         logging.info(f"The {campaignName} campaign has been deleted.")
 
 def delete_filter(filter_arn):
-    logging.info("Delete filter: " + ", ".join(filter_arn))
+    logging.info("Delete filter: " + filter_arn)
     personalize.delete_filter(filterArn=filter_arn)
+
+    time.sleep(60) # wait until filter has been deleted
 
 def delete_dataset(arns):
     logging.info("Delete dataset: " + ", ".join(arns))
@@ -73,6 +75,8 @@ def delete_role_and_policy(roleName, policyArn):
         RoleName=roleName,
         PolicyArn=policyArn
     )
+
+    time.sleep(5)
 
     iam_client.delete_role(RoleName=roleName)
     iam_client.delete_policy(PolicyArn=policyArn)
